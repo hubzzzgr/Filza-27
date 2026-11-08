@@ -16,7 +16,10 @@ The [unsigned IPA workflow](https://github.com/hubzzzgr/Filza-27/actions/workflo
 compiles on macOS with Xcode 26.2 and uploads `Filza-27-unsigned-arm64`, containing
 the IPA and SHA-256 checksum. Download an artifact from a successful run of the
 **worse_query-only changes**; earlier artifacts contain the older mixed build.
-Artifacts expire after 14 days.
+[Latest worse_query-only IPA artifact](https://github.com/hubzzzgr/Filza-27/actions/runs/42525402798/artifacts/13635367665).
+Compilation, packaging, and static archive checks passed for source `3025bdc`.
+Artifacts expire after 14 days. This artifact has no App Group configured; set
+its Info.plist group ID and sign with a matching provisioned group before use.
 
 CI only compiles, generates metadata, packages, and uploads. It never launches
 Filza, an exploit, or a simulator. A green build does not establish exploit or

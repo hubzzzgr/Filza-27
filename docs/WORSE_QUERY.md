@@ -96,11 +96,24 @@ CI additionally rejects known removed kernel, CMG/MCM traversal and WebKit
 respring markers in the compiled integration library. It never launches the app,
 an exploit, or a simulator. Only the IPA/checksum is uploaded as the build artifact.
 
-The earlier mixed-backend build passed in run
-[42521929984](https://github.com/hubzzzgr/Filza-27/actions/runs/42521929984). That
-artifact is **not** the worse_query-only revision. The new revision must pass a
-fresh build before being represented as build-verified; runtime compatibility
-remains unverified in either case.
+The worse_query-only revision passed GitHub Actions build
+[42525402798](https://github.com/hubzzzgr/Filza-27/actions/runs/42525402798),
+source commit `3025bdce373a5a9d0a4e946c67a97abbc863962a`. The first attempt caught
+a Swift header-nullability error; it was corrected before this successful run.
+The companion 3105 source checks passed too.
+
+[Download the unsigned IPA artifact](https://github.com/hubzzzgr/Filza-27/actions/runs/42525402798/artifacts/13635367665).
+IPA SHA-256: `ffaec0e56df5199da7689e1ccf5fad955773eaf86112e384c0320c7ca3c7d09c`.
+Static archive inspection verified that checksum, the ordinary app/extension
+bundle IDs, `FilzaAccessBackend=worse_query`, status-screen strings, absence of
+known removed-backend markers, and absence of profile/signature files.
+
+**No device functionality has been confirmed.** The artifact has no App Group
+configured. Set `FilzaWorseQueryAppGroup` and sign/provision the matching group
+before expecting cross-container access. Read observations shown by the app are
+not full feature tests; write access, Gestalt/PosterBoard changes, pairing,
+ByeTunes, WebDAV and SSH behavior remain runtime-unverified. No simulator or
+exploit was launched during CI or artifact inspection.
 
 External prerequisites remain Xcode 26.2/macOS runner availability, Theos/ldid,
 GNU make, Rust/aarch64-apple-ios and locked crates, CMake/Autotools, pinned native
