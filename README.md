@@ -29,7 +29,8 @@ device compatibility.
 
 - Packaged app ID: `com.hubzzzgr.FilzaWorseQuery`. The MobileHouseArrest identity
   is not retained. Your signer may change this to an identifier you control.
-- Configure `FilzaWorseQueryAppGroup` in Info.plist and provision the same group
+- Select an already provisioned group in **worse_query only → App Group setup**,
+  or configure `FilzaWorseQueryAppGroup` in Info.plist. Provision the same group
   in `com.apple.security.application-groups`. CI accepts an optional `app_group`
   workflow input or `FILZA_WORSE_QUERY_APP_GROUP` repository variable.
 - Use a dedicated, disposable group: upstream worse_query replaces its

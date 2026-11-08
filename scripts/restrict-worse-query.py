@@ -15,10 +15,7 @@ def remove_block(text, marker):
     raise SystemExit(f'Unbalanced block: {marker}')
 
 root = Path('ThirdParty/mond-current/Generated/Mond')
-p = root / 'exploit_unsbx.swift'
-s = p.read_text()
-s = remove_block(s, '    if MondEmbeddedParity.defaults.string(forKey: "method") == "cmg"')
-p.write_text(s)
+(root / 'exploit_unsbx.swift').write_text(Path('compat/MondWorseQueryAccess.swift').read_text())
 p = root / 'views_app_ContentView.swift'
 s = p.read_text().replace('method == "cmg" || ', '').replace('Text("HouseArrest")', 'Text("Containers")')
 s = remove_block(s, '                    if method == "cmg"')

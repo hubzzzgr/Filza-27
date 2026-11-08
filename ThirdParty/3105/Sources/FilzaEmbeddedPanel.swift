@@ -50,6 +50,9 @@ struct FilzaEmbeddedPanel<Content: View>: View {
 private struct FilzaAccessStatusView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var observations: [String: String] = [:]
+    @State private var groupInput = ""
+    @State private var groupStatus = ""
+    @State private var setupMessage = ""
 
     var body: some View {
         NavigationStack {
@@ -57,8 +60,30 @@ private struct FilzaAccessStatusView: View {
                 Section("Access backend") {
                     Text("worse_query only")
                     Text("No MobileHouseArrest, CMG, kernel exploit, or fallback exploit is enabled.")
-                    Text(MCMBridgeAvailable() ? "App Group prerequisite available" : "App Group missing or inaccessible")
+                    Text(groupStatus)
                     Text("A provisioned, dedicated App Group is required. A successful build does not verify device compatibility.")
+                }
+                Section("App Group setup") {
+                    TextField("group.your.provisioned.identifier", text: $groupInput)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    Text("Use a dedicated, disposable App Group: worse_query replaces its Library/Caches. Do not use another app's shared data group.")
+                    Button("Save and check App Group") {
+                        if let problem = FilzaWorseQueryConfigureGroup(groupInput) {
+                            setupMessage = problem
+                        } else {
+                            setupMessage = "Setting saved. Restart Filza to refresh discovery, then request access again."
+                        }
+                        reload()
+                    }
+                    Button("Use packaged setting") {
+                        _ = FilzaWorseQueryConfigureGroup("")
+                        groupInput = FilzaWorseQueryGroupIdentifier()
+                        setupMessage = "Packaged setting selected. Restart Filza to refresh discovery."
+                        reload()
+                    }
+                    if !setupMessage.isEmpty { Text(setupMessage).font(.caption) }
+                    Text("This setting cannot create a signing entitlement. The group must already be in this app's provisioning profile and signed entitlements.")
                 }
                 Section("Feature status") {
                     Text("Files and containers: checked per operation")
@@ -82,11 +107,14 @@ private struct FilzaAccessStatusView: View {
             }
             .navigationTitle("worse_query status")
             .toolbar { Button("Done") { dismiss() } }
-            .onAppear { reload() }
+            .onAppear { groupInput = FilzaWorseQueryGroupIdentifier(); reload() }
         }
     }
 
-    private func reload() { observations = FilzaWorseQueryObservedAccess() }
+    private func reload() {
+        observations = FilzaWorseQueryObservedAccess()
+        groupStatus = FilzaWorseQueryConfigurationStatus()
+    }
 }
 
 enum FilzaEmbeddedPanelPresentation {

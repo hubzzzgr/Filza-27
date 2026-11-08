@@ -1,4 +1,5 @@
 #import "MCMBridge.h"
+#import "FilzaAccessStatus.h"
 #import "compat/bad_query.h"
 #import <dirent.h>
 #import <stdlib.h>
@@ -20,9 +21,7 @@ static NSString *QueryRoot(uint64_t kind)
 
 BOOL MCMBridgeAvailable(void)
 {
-    id group = [NSBundle.mainBundle objectForInfoDictionaryKey:@"FilzaWorseQueryAppGroup"];
-    return [group isKindOfClass:NSString.class] && [group hasPrefix:@"group."] &&
-        [NSFileManager.defaultManager containerURLForSecurityApplicationGroupIdentifier:group] != nil;
+    return FilzaWorseQueryReady();
 }
 
 static NSMutableDictionary *QueryMaps(void)
@@ -78,6 +77,10 @@ NSString *MCMContainerPathForIdentifier(uint64_t kind, NSString *identifier, BOO
 {
     (void)group;
     if (!identifier.length) return nil;
+    if (!FilzaWorseQueryReady()) {
+        if (error) *error = FilzaWorseQueryConfigurationStatus();
+        return nil;
+    }
     NSString *path = QueryContainers(kind)[identifier];
     if (error) *error = path ? @"worse_query metadata map" :
         @"No worse_query container found; check App Group provisioning and scan coverage";

@@ -44,8 +44,9 @@ with **`com.hubzzzgr.FilzaWorseQuery`**, and updates the share extension's prefi
 A signer can substitute its own registered ID. No privileged Apple identity is
 required or preserved as an access route.
 
-Register/provision a **dedicated, disposable App Group**, set Info.plist string
-`FilzaWorseQueryAppGroup` to its ID, and sign with a matching profile/entitlement:
+Register/provision a **dedicated, disposable App Group**, sign with a matching profile/entitlement, then select that group in the in-app
+**worse_query only → App Group setup** screen. Alternatively, package its ID in
+Info.plist string `FilzaWorseQueryAppGroup`:
 
 ```xml
 <key>com.apple.security.application-groups</key>
@@ -78,9 +79,11 @@ signed system volume remains read-only. There is no full jailbreak or root shell
 
 The two-million-inode scan bound may miss containers. Discovery is not access;
 operations still need grants and can fail. Negative errors are not fabricated
-success handles. `-256` indicates missing/unavailable App Group configuration or
-upstream's ambiguous extension-consumption failure; `-257` is symlink preparation
-failure. Handles/releases and newline-separated caller-owned listing buffers keep
+success handles. In the setup-fix revision, `-256` indicates missing/inaccessible
+App Group configuration, `-257` is symlink preparation failure, `-258` preserves
+upstream's ambiguous group-loss/extension-consumption failure, and `-259` means
+a returned handle failed the read check and was released. Earlier IPA versions
+used `-256` for both configuration and consumption failures. Handles/releases and newline-separated caller-owned listing buffers keep
 the old ABI. All clients serialize the complete upstream Caches transaction.
 
 ## Build and verification
@@ -135,3 +138,20 @@ actual directory enumeration/file reads, not just returned handles. The status
 view labels them historical, notes that leases may have been released, and does
 not claim write access or end-to-end feature functionality. Refreshing the view
 reads the snapshot; it does not launch an exploit or perform a write test.
+
+## Setup/logging fix
+
+The original Mond log formatter printed its success message for unrecognized
+negative errors, including `-256`. That did not mean access was granted. The
+coordinator now uses a dedicated failure branch with descriptive error text.
+When no accessible App Group is selected, it marks all grants unavailable and
+skips dependent MobileGestalt, PosterBoard and container requests. Concurrent
+coordinator invocations are suppressed. A positive Mond handle must also pass
+an actual target read check (including the MobileGestalt plist when requested);
+this still does not prove write access or full feature compatibility.
+
+The in-app group setting selects a group already provisioned for the signed
+app; it cannot add entitlements or register a group. It validates accessibility
+before saving, never automatically chooses another app's group, and keeps the
+packaged setting as a fallback. Restart Filza after changing it to refresh
+startup container discovery. Missing provisioning must be fixed by signing.
