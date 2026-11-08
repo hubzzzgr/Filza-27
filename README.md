@@ -3,7 +3,8 @@
 > This source tree migrates the shared Filza/3105 and Mond access backend to
 > **worse_query**. It requires a dedicated, provisioned App Group. See
 > [migration, signing, build instructions, and limitations](docs/WORSE_QUERY.md).
-> No device compatibility or successful Xcode build is claimed for this migration.
+> GitHub Actions compilation/packaging passed; device and exploit compatibility
+> remain unverified. See the build result in the migration notes.
 > The release download below predates these source changes.
 
 A jailed, sideloadable Filza fork combining Filza with app/container management, ByeTunes, Mond 2.2, WebDAV, SSH/SFTP, and the 3105 patch workspace.

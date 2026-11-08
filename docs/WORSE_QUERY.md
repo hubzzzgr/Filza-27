@@ -154,12 +154,14 @@ Mond source completeness, base IPA download/SHA-256 and arm64 dylib load command
 ByeTunes v2.5 IPA checksum/configuration staging, YAML parsing, actionlint,
 and shell syntax. No app/exploit execution or simulator testing was performed.
 
-**An Xcode compilation and final IPA packaging have not been run here.** This
-workspace has no macOS/Xcode/iPhoneOS SDK, and the workflow has not been dispatched.
-Further compiler/linker errors may remain; CI saves compiler diagnostics on failure.
-A green workflow would establish compilation/packaging only.
+**GitHub Actions compilation and unsigned IPA packaging passed** on 2026-11-08:
+[build run 42521929984](https://github.com/hubzzzgr/Filza-27/actions/runs/42521929984),
+source commit `3e6ccedb90eefdd0fb8f2d215e4dc63787bac58e`. The artifact is
+`Filza-27-unsigned-arm64` (IPA plus checksum). The companion 3105 source-contract
+workflow passed too. No compiler/linker dependency remained unresolved in this
+run. Compilation/packaging do not establish device or exploit compatibility.
 
-Outstanding build prerequisites are the selected macOS/Xcode runner image,
+The successful build still depends on the selected macOS/Xcode runner image,
 Theos/ldid/GNU make, Rust plus the `aarch64-apple-ios` target and locked crates,
 CMake/Autotools, and the pinned native-library sources. Downloads also require
 GitHub/codeload/raw content, GitLab's libssh mirror, crates.io, the FilzaSlop base
