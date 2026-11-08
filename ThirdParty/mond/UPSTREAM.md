@@ -1,5 +1,9 @@
 # Mond 2.2 integration provenance
 
+The staged bad_query C snapshot described below is now retained for provenance
+only. Compiled Mond calls use the shared worse_query adapter; see
+[the migration limits and signing requirements](../../docs/WORSE_QUERY.md).
+
 The embedded Mond source is pinned to the exact current upstream 2.2 tree used by this branch:
 
 - Repository: `rooootdev/mond`

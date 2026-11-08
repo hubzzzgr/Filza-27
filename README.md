@@ -1,5 +1,11 @@
 # FilzaSlop / Filza-27
 
+> This source tree migrates the shared Filza/3105 and Mond access backend to
+> **worse_query**. It requires a dedicated, provisioned App Group. See
+> [migration, signing, build instructions, and limitations](docs/WORSE_QUERY.md).
+> No device compatibility or successful Xcode build is claimed for this migration.
+> The release download below predates these source changes.
+
 A jailed, sideloadable Filza fork combining Filza with app/container management, ByeTunes, Mond 2.2, WebDAV, SSH/SFTP, and the 3105 patch workspace.
 
 [![Filza ByeTunes Upstream Release](https://img.shields.io/badge/release-ByeTunes%20Upstream-brightgreen)](https://github.com/NightVibes33/Filza-27/releases/tag/Filza-27-byetunes-upstream)
@@ -42,9 +48,9 @@ A jailed, sideloadable Filza fork combining Filza with app/container management,
 
 The application and integrated runtime build with a minimum deployment target of **iOS 17.0**.
 
-UI availability and filesystem-access capability are separate. Mond's `bad_query`, `cmg`, private APIs, 3105 backend paths, and cross-container write paths remain OS/build-specific. Filza-27 validates what access is actually available on the running device rather than treating the UI as proof of unrestricted access.
+UI availability and filesystem-access capability are separate. The new `worse_query` adapter (including legacy `bad_query` labels), `cmg`, private APIs, 3105 backend paths, and cross-container write paths remain OS/build-specific. Filza-27 validates what access is actually available on the running device rather than treating the UI as proof of unrestricted access.
 
-For iOS 27 research builds, useful `bad_query` behavior is associated with specific builds; do not infer unrestricted access merely because Mond loads.
+Upstream advertises worse_query for iOS 26.0–26.7.2 / 27.2. Filza compatibility is unverified; embedded feature gates still use their legacy ranges. Do not infer access from a successful build or from Mond loading.
 
 ### Experimental LiveContainer compatibility
 
@@ -122,7 +128,7 @@ Available Mond routes include:
 - HouseArrest / Santander
 - Settings / exploit controls
 
-Exposed Mond access methods include `bad_query` and `cmg`. Their effectiveness remains version/build-specific.
+Mond retains its `bad_query` method label/preferences, routed through worse_query, and its separate `cmg` route. Their effectiveness remains version/build-specific; worse_query additionally needs a provisioned App Group.
 
 The MobileGestalt cache used by the editor is:
 
@@ -168,7 +174,7 @@ Useful files include `Runtime.log`, `WebDAVStatus.txt`, `SSHStatus.txt`, and `By
 
 The current public build is the [\`Filza-27-byetunes-upstream\` release](https://github.com/NightVibes33/Filza-27/releases/tag/Filza-27-byetunes-upstream), with the unsigned [\`Filza-27.ipa\` asset](https://github.com/NightVibes33/Filza-27/releases/download/Filza-27-byetunes-upstream/Filza-27.ipa).
 
-The remaining CI workflows cover full-build diagnostics and the 3105/shared embedded UI source contract. Historical ByeTunes verifier, iOS 16, simulator-probe, and duplicate release workflows have been removed.
+The **Build unsigned Filza IPA** workflow compiles/packages on macOS and uploads `Filza-27-unsigned-arm64` (IPA + checksum). It does not launch the app, an exploit, or a simulator. The 3105/shared embedded UI source-contract workflow remains enabled; the old release publisher is archived and inactive. See [build details and outstanding dependencies](docs/WORSE_QUERY.md#validation-and-outstanding-dependencies).
 
 ## Current limitations
 
@@ -187,7 +193,8 @@ Filza-27 combines work from multiple open-source projects. Their upstream licens
 - [34306/FilzaJailedDS](https://github.com/34306/FilzaJailedDS)
 - [0xjohnnydev/FilzaSlop](https://github.com/0xjohnnydev/FilzaSlop)
 - [0xjohnnydev/MobileHouseArrest-PoC](https://github.com/0xjohnnydev/MobileHouseArrest-PoC)
-- [forcequitOS/bad_query](https://github.com/forcequitOS/bad_query)
+- [forcequitOS/worse_query](https://github.com/forcequitOS/worse_query)
+- [forcequitOS/bad_query](https://github.com/forcequitOS/bad_query) (legacy integration/provenance)
 - [rooootdev/mond](https://github.com/rooootdev/mond)
 - [YangJiiii/3105](https://github.com/YangJiiii/3105)
 - [NightVibes33/3105](https://github.com/NightVibes33/3105)

@@ -10,7 +10,7 @@ IDEVICE_VENDOR ?= $(PWD)/Vendor/idevice
 IDEVICE_STATIC := $(IDEVICE_VENDOR)/lib/libidevice_ffi.a
 BYETUNES_ROOT := ByeTunes/MusicManager
 BYETUNES_ACTIVITY_SHARED := ByeTunes/MusicManagerActivityShared/DownloadLiveActivityAttributes.swift
-BAD_QUERY_ROOT := ThirdParty/bad_query
+WORSE_QUERY_ROOT := ThirdParty/worse_query
 GCDWEBSERVER_ROOT := ThirdParty/GCDWebServer
 THREEONE_ROOT := ThirdParty/3105
 MOND_CURRENT_ROOT := ThirdParty/mond-current
@@ -19,8 +19,7 @@ MOND_GEN := $(MOND_CURRENT_ROOT)/Generated
 FilzaApplySandboxExt_FILES = Tweak.m AppsMusicFix.m AppsManagerPresentationFix.m AppProxyMetadataFix.m AppMetadataRetryFix.m AppIconResourceProxyFix.m VirtualBackendFix.m SystemPathDiagnostics.m BadQuerySystemProbe.m GestaltManager.m FilzaMondBridge.m FilzaMainToolbarGestalt.m Filza3105Bridge.m Filza3105IPAExportBridge.m ByeTunesMusicBridge.m ByeTunesFilzaLibraryEmbed.m ByeTunesFullAppLauncher.m FilzaDiagnostics.m FilzaQuickActions.m WebDAVRuntimeFix.m WebDAVToggleStateFix.m ArchiveSafety.m ArchiveCreationSafety.m RuntimeStability.m CompatibilityDiagnostics.m CVE43724RieCompatibility.m MCMBridge.m MCMFilzaIntegration.m PosterBoardFeature.m
 FilzaApplySandboxExt_FILES += $(THREEONE_ROOT)/Sources/AppIconHelper.m
 FilzaApplySandboxExt_FILES += $(THREEONE_ROOT)/Sources/wallpaper_zip.c
-FilzaApplySandboxExt_FILES += $(BAD_QUERY_ROOT)/bad_query/bad_query.c
-FilzaApplySandboxExt_FILES += $(MOND_GEN)/mond_bad_query.c
+FilzaApplySandboxExt_FILES += FilzaQueryCompat.m $(WORSE_QUERY_ROOT)/worse_query.m $(WORSE_QUERY_ROOT)/pathleak.m
 
 GCDWEBSERVER_OBJC_FILES := $(shell find $(GCDWEBSERVER_ROOT)/GCDWebServer $(GCDWEBSERVER_ROOT)/GCDWebDAVServer -type f -name '*.m' -print)
 FilzaApplySandboxExt_FILES += $(GCDWEBSERVER_OBJC_FILES)
@@ -96,7 +95,7 @@ MOND_ZIP_SWIFT_FILES := \
 
 FilzaApplySandboxExt_SWIFT_FILES = ByeTunesEmbeddedHost.swift ByeTunesMetadataCompat.swift ByeTunesDownloadParityCompat.swift FilzaMondCurrentHost.swift Filza3105Host.swift $(MOND_SWIFT_FILES) $(MOND_PARTYUI_SWIFT_FILES) $(MOND_ZIP_SWIFT_FILES) $(THREEONE_SWIFT_FILES) $(BYETUNES_SWIFT_FILES) $(BYETUNES_ACTIVITY_SHARED)
 
-FilzaApplySandboxExt_CFLAGS = -I$(PWD)/compat -I$(PWD) -I$(PWD)/XPF/src -I$(PWD)/XPF/external/ChOma/include -I$(IDEVICE_VENDOR)/include -I$(PWD)/$(BAD_QUERY_ROOT)/bad_query -I$(PWD)/$(THREEONE_ROOT)/Sources -I$(PWD)/$(MOND_GEN) \
+FilzaApplySandboxExt_CFLAGS = -I$(PWD)/compat -I$(PWD) -I$(PWD)/XPF/src -I$(PWD)/XPF/external/ChOma/include -I$(IDEVICE_VENDOR)/include -I$(PWD)/$(THREEONE_ROOT)/Sources -I$(PWD)/$(MOND_GEN) \
     -I$(PWD)/$(GCDWEBSERVER_ROOT)/GCDWebServer/Core -I$(PWD)/$(GCDWEBSERVER_ROOT)/GCDWebServer/Requests -I$(PWD)/$(GCDWEBSERVER_ROOT)/GCDWebServer/Responses -I$(PWD)/$(GCDWEBSERVER_ROOT)/GCDWebDAVServer \
     -I$(shell xcrun --sdk iphoneos --show-sdk-path 2>/dev/null)/usr/include/libxml2 \
     -fobjc-arc -include errno.h -include math.h \
@@ -144,8 +143,8 @@ before-FilzaApplySandboxExt-all::
 	@test -f "scripts/patch-byetunes-download-provider-parity.sh" || (echo "Missing ByeTunes download-provider parity patch" >&2; exit 1)
 	@test -f "scripts/patch-byetunes-device-library-save.sh" || (echo "Missing ByeTunes device-library save verifier" >&2; exit 1)
 	@test -f "scripts/patch-3105-embedded-compat.sh" || (echo "Missing 3105 embedded compatibility transform" >&2; exit 1)
-	@test -f "$(BAD_QUERY_ROOT)/bad_query/bad_query.c" || (echo "Missing pinned bad_query submodule" >&2; exit 1)
-	@test -f "$(BAD_QUERY_ROOT)/bad_query/bad_query.h" || (echo "Incomplete bad_query submodule" >&2; exit 1)
+	@test -f "$(WORSE_QUERY_ROOT)/worse_query.m" || (echo "Missing pinned worse_query source" >&2; exit 1)
+	@test -f "$(WORSE_QUERY_ROOT)/pathleak.m" || (echo "Missing pinned pathleak source" >&2; exit 1)
 	@test -f "AppProxyMetadataFix.m" || (echo "Missing AppProxyMetadataFix.m" >&2; exit 1)
 	@test -f "AppMetadataRetryFix.m" || (echo "Missing AppMetadataRetryFix.m" >&2; exit 1)
 	@test -f "AppIconResourceProxyFix.m" || (echo "Missing AppIconResourceProxyFix.m" >&2; exit 1)
@@ -166,7 +165,7 @@ before-FilzaApplySandboxExt-all::
 	@test -f "$(MOND_GEN)/Mond/views_tweaks_posterboard_PosterView.swift" || (echo "Missing Mond 2.2 PosterView" >&2; exit 1)
 	@test -f "$(MOND_GEN)/Mond/views_tweaks_posterboard_TendiesView.swift" || (echo "Missing Mond 2.2 TendiesView" >&2; exit 1)
 	@test -f "$(MOND_GEN)/Mond/helpers_posterboard_tendies.swift" || (echo "Missing Mond 2.2 Tendies model" >&2; exit 1)
-	@test -f "$(MOND_GEN)/mond_bad_query.c" || (echo "Missing Mond 2.2 bad_query implementation" >&2; exit 1)
+	@test -f "compat/bad_query.h" || (echo "Missing worse_query ABI adapter header" >&2; exit 1)
 	@test -f "$(MOND_GEN)/PartyUI/Containers_TerminalPlatter.swift" || (echo "Missing Mond PartyUI" >&2; exit 1)
 	@test -f "$(MOND_GEN)/ZIPFoundation/Archive.swift" || (echo "Missing Mond ZIPFoundation" >&2; exit 1)
 	@test -f "$(MOND_GEN)/ZIPFoundation/FileManager+ZIP.swift" || (echo "Missing Mond ZIPFoundation FileManager support" >&2; exit 1)

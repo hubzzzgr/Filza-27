@@ -1,0 +1,137 @@
+name: Build unsigned Filza IPA
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      app_group:
+        description: 'Optional dedicated App Group ID; must also be provisioned by your sideloading signer'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unsigned-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    env:
+      THEOS: ${{ github.workspace }}/.theos-toolchain
+      THEOS_COMMIT: 5280bd038207e14f8bd76f5417aa2fe641c03228
+      FILZA_WORSE_QUERY_APP_GROUP: ${{ inputs.app_group || vars.FILZA_WORSE_QUERY_APP_GROUP }}
+      BASE_IPA_URL: https://github.com/0xjohnnydev/FilzaSlop/releases/download/v1.0.2/FilzaSlop-v1.0.2-unsigned.ipa
+      BASE_IPA_SHA256: b11ce30a2db6f6bc77773ed30bdb855d7c847830891b14d21230f2d893d5f223
+
+    steps:
+      - name: Checkout pinned dependencies
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Select Xcode 26.2
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '26.2'
+
+      - name: Install build tools
+        run: |
+          set -euo pipefail
+          brew install make ldid autoconf automake libtool cmake pkg-config
+          rustup target add aarch64-apple-ios
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Restore Theos
+        id: theos-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.THEOS }}
+          key: theos-${{ runner.os }}-${{ runner.arch }}-${{ env.THEOS_COMMIT }}
+
+      - name: Install pinned Theos
+        if: steps.theos-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none https://github.com/theos/theos.git "$THEOS"
+          git -C "$THEOS" checkout --detach "$THEOS_COMMIT"
+          git -C "$THEOS" submodule update --init --recursive
+
+      - name: Restore device libraries
+        id: vendor-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            Vendor/idevice
+            Vendor/ssh
+            Vendor/wolfssh
+          key: filza-device-libs-${{ runner.os }}-${{ runner.arch }}-xcode26.2-${{ hashFiles('scripts/build-idevice.sh', 'scripts/build-ssh-stack.sh', 'scripts/build-wolfssh-stack.sh', 'scripts/wolfssh-allow-multiple-session-channels.patch') }}
+
+      - name: Cross-compile pinned device libraries
+        if: steps.vendor-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          bash scripts/build-idevice.sh "$GITHUB_WORKSPACE/Vendor/idevice"
+          bash scripts/build-ssh-stack.sh "$GITHUB_WORKSPACE/Vendor/ssh"
+          bash scripts/build-wolfssh-stack.sh "$GITHUB_WORKSPACE/Vendor/wolfssh"
+
+      - name: Stage generated sources before Theos expands input lists
+        run: |
+          set -euo pipefail
+          bash scripts/stage-mond-current.sh
+          bash scripts/stage-mond-22-overlay.sh
+          bash scripts/stage-3105-v1.sh
+
+      - name: Compile arm64 iPhoneOS library
+        run: |
+          set -euo pipefail
+          mkdir -p Build
+          # Build only. Never launch the app, an exploit, or a simulator.
+          gmake -j"$(sysctl -n hw.logicalcpu)" all FINALPACKAGE=1 \
+            TARGET=iphone:clang:latest:17.0 2>&1 | tee Build/compile.log
+          test -s .theos/obj/FilzaApplySandboxExt.dylib
+          test "$(lipo -archs .theos/obj/FilzaApplySandboxExt.dylib)" = arm64
+
+      - name: Generate AppIntents metadata
+        run: bash scripts/generate-appintents-metadata.sh .theos/byetunes-appintents
+
+      - name: Package unsigned sideloading archive
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3 --retry-delay 2 "$BASE_IPA_URL" -o Build/base.ipa
+          echo "$BASE_IPA_SHA256  Build/base.ipa" | shasum -a 256 -c -
+          bash scripts/package-unsigned-ipa.sh Build/base.ipa Build/Filza-27-unsigned.ipa
+          shasum -a 256 Build/Filza-27-unsigned.ipa > Build/SHA256SUMS
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Filza-27-unsigned-arm64
+          path: |
+            Build/Filza-27-unsigned.ipa
+            Build/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload compiler diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Filza-27-build-diagnostics
+          path: |
+            Build/compile.log
+            .theos/byetunes-appintents/*.stderr
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7

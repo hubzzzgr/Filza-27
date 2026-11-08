@@ -27,8 +27,9 @@ the embedded app, including:
 - the upstream 1.1.1 revisions of the kernel/sandbox backend files already
   represented by Filza's existing build graph.
 
-Filza keeps its separately pinned global `bad_query` implementation rather than
-adding a second copy from 3105.
+Filza keeps the upstream `bad_query` caller ABI through its shared worse_query
+adapter rather than adding a second implementation from 3105. See
+[the migration limits and signing requirements](../../docs/WORSE_QUERY.md).
 
 ## Filza embedding boundary
 

@@ -275,7 +275,8 @@ static NSString *FilzaBadQueryFailureDescription(int64_t result)
         case -2: return @"container_query_create failed";
         case -3: return @"ContainerManager traversal query returned no result";
         case -4: return @"kernel/containermanagerd returned no sandbox extension";
-        case -5: return @"path-domain construction failed";
+        case -256: return @"worse_query App Group unavailable/configuration missing, or extension consumption failed";
+        case -257: return @"worse_query could not prepare the dedicated App Group Caches symlink";
         default: return [NSString stringWithFormat:@"bad_query returned %lld", result];
     }
 }
