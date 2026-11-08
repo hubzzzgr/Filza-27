@@ -155,3 +155,16 @@ app; it cannot add entitlements or register a group. It validates accessibility
 before saving, never automatically chooses another app's group, and keeps the
 packaged setting as a fallback. Restart Filza after changing it to refresh
 startup container discovery. Missing provisioning must be fixed by signing.
+
+The setup/logging fix built successfully in run
+[42527893233](https://github.com/hubzzzgr/Filza-27/actions/runs/42527893233),
+source `f55e03be09c79f730fd2dd6687fb7d8c624d0d29`, on isolated branch
+`fix/worse-query-app-group-setup`; `main` remains unchanged.
+[Download this fix's artifact](https://github.com/hubzzzgr/Filza-27/actions/runs/42527893233/artifacts/13636511880).
+IPA SHA-256: `dbc7aea359a45f56aa85a677ec81967647ed45f204d991c9c315479bc34b38ea`.
+Static archive inspection confirmed the setup button and corrected log strings,
+absence of the old false-success/generic kernel-rejection messages, the ordinary
+bundle identity, and absence of known removed-backend markers. No runtime
+exploit or device feature test was performed; provisioning remains a device-side
+prerequisite. Existing Tweak/activation/file-operation hooks were not modified
+by this focused fix.
