@@ -15,9 +15,6 @@
 
 #include "MCMFilzaIntegration.h"
 #include "PosterBoardFeature.h"
-#include "kexploit/kexploit_opa334.h"
-#include "kexploit/kutils.h"
-#include "sandbox_escape.h"
 
 #pragma mark - Root Helper Hooks
 
@@ -31,23 +28,11 @@ static int hook_respawnRootHelper(id self, SEL _cmd) { return 0; }
 static void hook_tryLoadFilzaHelper(id self, SEL _cmd) {}
 static void hook_createHelperConnectionIfNeeds(id self, SEL _cmd) {}
 
-static BOOL isExactIOS185Target(void) {
-    char machine[64] = {0};
-    char build[64] = {0};
-    size_t machineSize = sizeof(machine);
-    size_t buildSize = sizeof(build);
-    if (sysctlbyname("hw.machine", machine, &machineSize, NULL, 0) != 0 ||
-        sysctlbyname("kern.osversion", build, &buildSize, NULL, 0) != 0)
-        return NO;
-    return !strcmp(machine, "iPhone17,2") && !strcmp(build, "22F76") &&
-        [UIDevice.currentDevice.systemVersion isEqualToString:@"18.5"];
-}
-
 // A jailed Filza otherwise restores its usual /var/mobile start path, which is
 // not listable by this container-scoped primitive. Start directly in the MCM
 // virtual root after ensuring it has been populated.
 static id hook_defaultPath(id self, SEL _cmd) {
-    if (!isExactIOS185Target()) MCMFilzaStart();
+    MCMFilzaStart();
     return MCMFilzaVirtualRoot();
 }
 
@@ -66,6 +51,7 @@ static IMP orig_fileSystemSetCurrentPath = NULL;
 static IMP orig_fileSystemUpdateEditableUI = NULL;
 static void refreshWallpaperButton(id controller, id fallbackPath) {
     if (![controller isKindOfClass:UIViewController.class]) return;
+    ((UIViewController *)controller).navigationItem.prompt = @"worse_query only · access checked per target";
     SEL selector = NSSelectorFromString(@"currentPath");
     NSString *currentPath = [controller respondsToSelector:selector]
         ? ((id(*)(id, SEL))objc_msgSend)(controller, selector) : nil;
@@ -1633,45 +1619,10 @@ static void runMCMPath(void) {
     runOptInPasteCopyProbe();
 }
 
-static void runIOS185KernelPath(void) {
-    NSLog(@"[Filza18] starting exact-target kernel path");
-    int kernelResult = kexploit_opa334();
-    if (kernelResult != 0) {
-        NSLog(@"[Filza18] kexploit failed result=%d", kernelResult);
-        return;
-    }
-    uint64_t selfProc = proc_self();
-    int sandboxResult = sandbox_escape(selfProc);
-    NSLog(@"[Filza18] sandbox result=%d self_proc=0x%llx",
-          sandboxResult, selfProc);
-    if (sandboxResult != 0) return;
-
-    MCMFilzaSetUnrestrictedFilesystem(YES);
-    MCMFilzaStart();
-    dispatch_async(dispatch_get_main_queue(), ^{
-        scheduleInitialBrowserRepair(8);
-    });
-}
-
 #pragma mark - Entry Point
 
 __attribute__((constructor)) void TweakInit(void) {
     installHooks();
-    if (isExactIOS185Target()) {
-        [NSFileManager.defaultManager createDirectoryAtPath:MCMFilzaVirtualRoot()
-            withIntermediateDirectories:YES attributes:nil error:nil];
-        [[NSNotificationCenter defaultCenter]
-            addObserverForName:UIApplicationDidFinishLaunchingNotification
-            object:nil queue:nil usingBlock:^(__unused NSNotification *note) {
-                dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
-                    runIOS185KernelPath();
-                });
-            }];
-        scheduleInitialBrowserRepair(8);
-        return;
-    }
-
-    // Populate the MCM root before Filza restores its initial browser path.
     runMCMPath();
     scheduleInitialBrowserRepair(8);
 }

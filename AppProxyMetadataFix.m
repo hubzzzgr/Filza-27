@@ -44,7 +44,7 @@ static unsigned long long FilzaAllocatedContainerBytes(NSString *identifier)
 
     // Reuse the exact path resolver used when the user opens an app from
     // Filza's Apps Manager. This keeps the metadata and browser backends in
-    // lockstep: MHA class-2 first, then the pinned bad_query per-container
+    // lockstep: worse_query per-container
     // fallback, followed by an actual readdir verification before returning.
     NSString *detail = nil;
     NSString *root = FilzaEnsureVirtualAppDataPath(identifier, &detail);

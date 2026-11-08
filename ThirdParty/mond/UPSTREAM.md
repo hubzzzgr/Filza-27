@@ -61,3 +61,10 @@ The transformations are deliberately narrow:
 The old Filza-specific Mond patches are not reintroduced: there is no custom token-status UI, no injected iOS 27 Gestalt-key section, and no alternate manual-exploit lifecycle. The pinned upstream snapshot is preserved for auditing and the build fails if its expected source graph or key 2.2 behaviors drift.
 
 Filza's own package/application version remains independently anchored and is not changed by the Mond integration.
+
+## worse_query-only override
+
+The current final staging transform removes CMG, token tools, and the WebKit
+respring crash described historically above. Generated CMG/bad_query/token files
+are removed before compilation; only the worse_query adapter is linked. The
+respring action provides manual-restart guidance. See `docs/WORSE_QUERY.md`.

@@ -11,6 +11,5 @@ FOUNDATION_EXPORT void MCMFilzaRecordDeletedGeneratedPath(NSString *path);
 FOUNDATION_EXPORT NSString *MCMFilzaWallpaperLabName(void);
 FOUNDATION_EXPORT BOOL MCMFilzaIsRunningInLiveContainer(void);
 FOUNDATION_EXPORT BOOL MCMFilzaPathHasActiveLease(NSString *path);
-FOUNDATION_EXPORT void MCMFilzaSetUnrestrictedFilesystem(BOOL enabled);
 
 NS_ASSUME_NONNULL_END

@@ -2,17 +2,6 @@
 # Keep upstream ByeTunes provider/download behavior intact; Filza-specific
 # embedding, pairing, 3105, Mond, and support integration remain below.
 
-# 3105 1.1.1 stages its updated sandbox_escape.m at the repository root, while
-# that upstream translation unit keeps the original quoted kexploit header names.
-FilzaApplySandboxExt_CFLAGS += -I$(PWD)/kexploit
-
-# XPF's common/PatchFinder code calls the arm64-specific ChOma helpers.
-FilzaApplySandboxExt_FILES += XPF/external/ChOma/src/PatchFinder_arm64.c
-
-# Upstream Mond resolves these private Sandbox SPI calls dynamically. Keep the
-# existing forwarding ABI bridge used by the combined target.
-FilzaApplySandboxExt_FILES += MondSandboxSPICompat.c
-
 # Replace Filza's legacy activation/payment presentation with voluntary support UI.
 FilzaApplySandboxExt_FILES += FilzaSupportPrompt.m
 
@@ -95,3 +84,5 @@ before-FilzaApplySandboxExt-all::
 
 # Retired DNS/WebKit workaround remains intentionally unused:
 # scripts/patch-byetunes-metadata-network-resilience.sh
+
+	@python3 scripts/restrict-worse-query.py

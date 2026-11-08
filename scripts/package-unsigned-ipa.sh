@@ -30,6 +30,13 @@ unzip -q "$BASE_IPA" -d "$STAGE"
 APP="$(find "$STAGE/Payload" -maxdepth 1 -type d -name '*.app' -print -quit)"
 test -n "$APP"
 test "$(plutil -extract CFBundleIdentifier raw -o - "$APP/Info.plist")" = com.apple.mobile.MobileHouseArrest
+# The archive is a resource/binary base only; do not retain its privileged identity.
+plutil -replace CFBundleIdentifier -string com.hubzzzgr.FilzaWorseQuery "$APP/Info.plist"
+plutil -replace FilzaAccessBackend -string worse_query "$APP/Info.plist"
+while IFS= read -r -d '' extension_plist; do
+  plutil -replace CFBundleIdentifier -string \
+    "com.hubzzzgr.FilzaWorseQuery.$(basename "$(dirname "$extension_plist")" .appex)" "$extension_plist"
+done < <(find "$APP/PlugIns" -name Info.plist -print0)
 EXECUTABLE="$(plutil -extract CFBundleExecutable raw -o - "$APP/Info.plist")"
 test -s "$APP/$EXECUTABLE"
 # The pinned base is already linked to this injected library. Never run it.

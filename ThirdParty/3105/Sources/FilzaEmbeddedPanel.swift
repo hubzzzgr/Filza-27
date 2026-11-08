@@ -9,6 +9,7 @@ import UIKit
 /// own SwiftUI hierarchy.
 struct FilzaEmbeddedPanel<Content: View>: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var showAccessStatus = false
     private let content: Content
 
     init(@ViewBuilder content: () -> Content) {
@@ -25,6 +26,12 @@ struct FilzaEmbeddedPanel<Content: View>: View {
                 }
 
                 Spacer()
+                Button {
+                    showAccessStatus = true
+                } label: {
+                    Label("worse_query only", systemImage: "info.circle")
+                        .font(.caption)
+                }
             }
             .font(.callout.weight(.semibold))
             .padding(.horizontal, 16)
@@ -36,7 +43,50 @@ struct FilzaEmbeddedPanel<Content: View>: View {
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .sheet(isPresented: $showAccessStatus) { FilzaAccessStatusView() }
     }
+}
+
+private struct FilzaAccessStatusView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var observations: [String: String] = [:]
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Access backend") {
+                    Text("worse_query only")
+                    Text("No MobileHouseArrest, CMG, kernel exploit, or fallback exploit is enabled.")
+                    Text(MCMBridgeAvailable() ? "App Group prerequisite available" : "App Group missing or inaccessible")
+                    Text("A provisioned, dedicated App Group is required. A successful build does not verify device compatibility.")
+                }
+                Section("Feature status") {
+                    Text("Files and containers: checked per operation")
+                    Text("Gestalt and PosterBoard: depend on access to their exact targets")
+                    Text("ByeTunes, pairing, WebDAV and SSH: device behavior unverified")
+                    Text("No feature is marked working merely because an access handle was returned. Write access is not tested by this status view.")
+                }
+                Section("Last observed target access") {
+                    if observations.isEmpty {
+                        Text("No target access observed in this session.")
+                    }
+                    ForEach(observations.keys.sorted(), id: \.self) { path in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(path).font(.caption).textSelection(.enabled)
+                            Text(observations[path] ?? "Unverified").font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    Text("These are historical read observations from normal access requests. Handles may since have been released; current access may differ.")
+                    Button("Refresh status") { reload() }
+                }
+            }
+            .navigationTitle("worse_query status")
+            .toolbar { Button("Done") { dismiss() } }
+            .onAppear { reload() }
+        }
+    }
+
+    private func reload() { observations = FilzaWorseQueryObservedAccess() }
 }
 
 enum FilzaEmbeddedPanelPresentation {

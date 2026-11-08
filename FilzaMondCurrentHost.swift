@@ -45,6 +45,8 @@ enum MondEmbeddedParity {
             }
         }
 
+        store.set("worse_query", forKey: "method")
+        store.removeObject(forKey: "token")
         return store
     }()
 
@@ -100,7 +102,7 @@ private enum MondEmbeddedRuntime {
         // Mirror Mond 2.2's standalone defaults. The embedded build does
         // not compile mond.swift, so these defaults must be registered here.
         MondEmbeddedParity.defaults.register(defaults: [
-            "method": "bad_query",
+            "method": "worse_query",
             "atomic_write": true
         ])
 
@@ -165,22 +167,13 @@ private struct MondEmbeddedRoot: View {
                     if !is_supported() {
                         MondCurrentAlertinator.shared.alert(
                             title: "Not supported!",
-                            body: "Your iOS version may not be supported by mond.\nMond only supports iOS 27.0 developer beta 1 - 4."
+                            body: "worse_query compatibility is unverified for this iOS version."
                         )
                     }
 
                     grant_all(state: state)
                 }
-                .overlay {
-                    if state.show_respring {
-                        MondCurrentRespringView()
-                            .brightness(-1.0)
-                            .ignoresSafeArea()
-                            .onAppear {
-                                print("(respring) respringing now...")
-                            }
-                    }
-                }
+
         }
     }
 }

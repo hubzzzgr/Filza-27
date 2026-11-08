@@ -1107,7 +1107,7 @@ static UIViewController *PBTopController(UIViewController *controller)
     [sheet addAction:[UIAlertAction actionWithTitle:@"Help" style:UIAlertActionStyleDefault
         handler:^(__unused UIAlertAction *action) {
             [weakSelf showAlertWithTitle:@"Wallpaper Lab"
-                message:@"Cipher imports automatically on first launch. Other extracted .tendies packages can be placed in [MHA-C2] Wallpaper Lab/Imports. Container-style packages are rejected. Imports are capped at 10 descriptors and 256 MiB. The refresh preference is backed up for rollback; the PosterBoard database is not changed."];
+                message:@"Cipher imports automatically on first launch. Other extracted .tendies packages can be placed in Wallpaper Lab/Imports. Container-style packages are rejected. Imports are capped at 10 descriptors and 256 MiB. The refresh preference is backed up for rollback; the PosterBoard database is not changed."];
         }]];
     [sheet addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
     sheet.popoverPresentationController.barButtonItem = sender;
@@ -1127,7 +1127,7 @@ void PBWallpaperFeatureStart(void)
     PBInstallBundledSamples();
     NSString *readme = [PBWorkspace() stringByAppendingPathComponent:@"README.txt"];
     NSString *text = @"Wallpaper Lab\n\n"
-        @"Primitive: MHA-MCM class 2 application-data lookup for com.apple.PosterBoard.\n"
+        @"Primitive: worse_query per-container access for com.apple.PosterBoard.\n"
         @"This folder is local staging. PosterBoard access starts only during a Wallpaper Lab action.\n\n"
         @"The bundled GPL-licensed Cipher wallpaper imports automatically on first launch.\n"
         @"When CIPHER READY appears here, open Settings > Wallpaper.\n\n"

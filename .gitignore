@@ -13,3 +13,5 @@ Vendor/wolfssh/
 ThirdParty/mond-current/
 ThirdParty/3105/Resources/Filza3105.bundle/UpstreamAppInfo.plist
 .theos-toolchain/
+__pycache__/
+*.pyc

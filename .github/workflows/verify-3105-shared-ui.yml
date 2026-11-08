@@ -68,7 +68,7 @@ jobs:
           grep -Fq 'UPSTREAM_COMMIT="f1b81047a01a1817c7fb17e6938929eef108f1aa"' scripts/stage-3105-v1.sh
           grep -Fq 'UPSTREAM_VERSION="1.1.1"' scripts/stage-3105-v1.sh
           test -f ThirdParty/3105/Sources/AppState.swift
-          test -f ThirdParty/3105/Sources/KernelExploit.swift
+          test -f ThirdParty/3105/Sources/AppState.swift
           test -f ThirdParty/3105/Sources/Utils.swift
           grep -Fq 'stage-3105-v1.sh' Makefile
 

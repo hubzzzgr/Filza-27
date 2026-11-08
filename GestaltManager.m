@@ -44,15 +44,6 @@ static IMP gGMOrigShortcut = NULL;
 
 #pragma mark - MobileGestalt access
 
-typedef void *(*GMQueryCreate)(void);
-typedef void (*GMQueryFree)(void *);
-typedef void (*GMQuerySetU64)(void *, uint64_t);
-typedef void (*GMQuerySetBool)(void *, bool);
-typedef void (*GMQuerySetXPC)(void *, xpc_object_t);
-typedef void *(*GMQueryGetSingle)(void *);
-typedef bool (*GMObjectActivate)(void *, bool);
-typedef const char *(*GMObjectGetPath)(void *);
-
 static BOOL GMFileReadable(NSString *path)
 {
     int fd = open(path.fileSystemRepresentation, O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
@@ -87,81 +78,6 @@ static NSString *GMResolvePlistBelowRoot(NSString *root)
     return nil;
 }
 
-static NSString *GMTryContainerManagerAccess(NSString **detail)
-{
-    void *lib = dlopen("/usr/lib/system/libsystem_containermanager.dylib", RTLD_NOW | RTLD_LOCAL);
-    void *handle = lib ?: RTLD_DEFAULT;
-
-#define GM_SYM(type, name) ((type)dlsym(handle, name))
-    GMQueryCreate create = GM_SYM(GMQueryCreate, "container_query_create");
-    GMQueryFree freeQuery = GM_SYM(GMQueryFree, "container_query_free");
-    GMQuerySetU64 setClass = GM_SYM(GMQuerySetU64, "container_query_set_class");
-    GMQuerySetBool setTransient = GM_SYM(GMQuerySetBool, "container_query_set_transient");
-    GMQuerySetXPC setGroups = GM_SYM(GMQuerySetXPC, "container_query_set_group_identifiers");
-    GMQuerySetU64 setPlatform = GM_SYM(GMQuerySetU64, "container_query_operation_set_platform");
-    GMQuerySetU64 setFlags = GM_SYM(GMQuerySetU64, "container_query_operation_set_flags");
-    GMQuerySetU64 setPart = GM_SYM(GMQuerySetU64, "container_query_operation_set_part");
-    GMQueryGetSingle getSingle = GM_SYM(GMQueryGetSingle, "container_query_get_single_result");
-    GMObjectActivate activate = GM_SYM(GMObjectActivate, "container_object_sandbox_extension_activate");
-    GMObjectGetPath getPath = GM_SYM(GMObjectGetPath, "container_object_get_path");
-#undef GM_SYM
-
-    if (!create || !freeQuery || !setClass || !setGroups || !setPlatform ||
-        !setFlags || !getSingle || !activate || !getPath) {
-        if (detail) *detail = @"ContainerManager MobileGestalt query API unavailable";
-        if (lib) dlclose(lib);
-        return nil;
-    }
-
-    void *query = create();
-    if (!query) {
-        if (detail) *detail = @"container_query_create failed";
-        if (lib) dlclose(lib);
-        return nil;
-    }
-
-    setClass(query, 13);
-    if (setTransient) setTransient(query, false);
-
-    xpc_object_t groups = xpc_array_create(NULL, 0);
-    xpc_array_set_string(groups, XPC_ARRAY_APPEND, GMSystemGroupIdentifier.UTF8String);
-    setGroups(query, groups);
-#if !OS_OBJECT_USE_OBJC
-    xpc_release(groups);
-#endif
-
-    setPlatform(query, 2);
-    setFlags(query, (1ULL << 32) | (1ULL << 39));
-    if (setPart) setPart(query, 3);
-
-    void *result = getSingle(query);
-    if (!result) {
-        freeQuery(query);
-        if (detail) *detail = @"MobileGestalt system-group query returned no result";
-        if (lib) dlclose(lib);
-        return nil;
-    }
-
-    BOOL activated = activate(result, true);
-    const char *raw = getPath(result);
-    NSString *root = raw ? [NSString stringWithUTF8String:raw] : nil;
-    NSString *resolved = GMResolvePlistBelowRoot(root);
-
-    freeQuery(query);
-    if (lib) dlclose(lib);
-
-    if (resolved.length) {
-        if (detail) *detail = [NSString stringWithFormat:
-            @"ContainerManager access %@; plist %@",
-            activated ? @"activated" : @"already usable", resolved];
-        return resolved;
-    }
-    if (detail) *detail = [NSString stringWithFormat:
-        @"ContainerManager returned %@ but MobileGestalt plist remained unreadable",
-        root ?: @"no path"];
-    return nil;
-}
-
 static NSString *GMTryBadQueryAccess(NSString **detail)
 {
     NSString *file = [GMFallbackDirectory stringByAppendingPathComponent:GMPlistName];
@@ -188,27 +104,10 @@ static NSString *GMTryBadQueryAccess(NSString **detail)
     return file;
 }
 
-NSString *FilzaGestaltPreferredMethod(void)
-{
-    NSString *method = [NSUserDefaults.standardUserDefaults stringForKey:GMMethodDefaultsKey];
-    return [method isEqualToString:@"cmg"] ? @"cmg" : @"bad_query";
-}
-
-void FilzaGestaltSetPreferredMethod(NSString *method)
-{
-    NSString *normalized = [method isEqualToString:@"cmg"] ? @"cmg" : @"bad_query";
-    NSString *previous = FilzaGestaltPreferredMethod();
-    [NSUserDefaults.standardUserDefaults setObject:normalized forKey:GMMethodDefaultsKey];
-    if (![previous isEqualToString:normalized]) {
-        if ([normalized isEqualToString:@"cmg"] && gGMBadQueryHandle >= 0) {
-            bad_query_release(gGMBadQueryHandle);
-            gGMBadQueryHandle = -1;
-        }
-        gGMResolvedPath = nil;
-        gGMResolvedMethod = nil;
-        FilzaDiagnosticsAppend(@"Gestalt", [NSString stringWithFormat:
-            @"access method changed from %@ to %@", previous, normalized]);
-    }
+NSString *FilzaGestaltPreferredMethod(void) { return @"worse_query"; }
+void FilzaGestaltSetPreferredMethod(NSString *method) {
+    (void)method;
+    [NSUserDefaults.standardUserDefaults setObject:@"worse_query" forKey:GMMethodDefaultsKey];
 }
 
 static NSString *GMEnsureAccess(NSString **detail)
@@ -223,9 +122,7 @@ static NSString *GMEnsureAccess(NSString **detail)
     }
 
     NSString *methodDetail = nil;
-    NSString *path = [method isEqualToString:@"cmg"]
-        ? GMTryContainerManagerAccess(&methodDetail)
-        : GMTryBadQueryAccess(&methodDetail);
+    NSString *path = GMTryBadQueryAccess(&methodDetail);
     if (detail) *detail = [NSString stringWithFormat:@"%@ — %@", method,
         methodDetail ?: @"access unavailable"];
     if (path.length) {

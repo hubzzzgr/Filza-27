@@ -6,6 +6,7 @@
 
 // Shared persistent diagnostics used by the embedded ByeTunes and mond hosts.
 #import "FilzaDiagnostics.h"
+#import "FilzaAccessStatus.h"
 #import "GestaltManager.h"
 
 // Native 3105 App Data Browser and portable Patches integration.

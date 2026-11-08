@@ -102,6 +102,13 @@ jobs:
             TARGET=iphone:clang:latest:17.0 2>&1 | tee Build/compile.log
           test -s .theos/obj/FilzaApplySandboxExt.dylib
           test "$(lipo -archs .theos/obj/FilzaApplySandboxExt.dylib)" = arm64
+          nm -gU .theos/obj/FilzaApplySandboxExt.dylib > Build/symbols.txt
+          if grep -E '_(kexploit_opa334|sandbox_escape|kwrite[0-9]+|kread[0-9]+|apfs_own)' Build/symbols.txt; then
+            echo "Removed backend still linked" >&2; exit 1
+          fi
+          if grep -aEq 'container_object_sandbox_extension_activate|container_query_set_part_domain|respringDocument' .theos/obj/FilzaApplySandboxExt.dylib; then
+            echo "Removed backend marker still present" >&2; exit 1
+          fi
 
       - name: Generate AppIntents metadata
         run: bash scripts/generate-appintents-metadata.sh .theos/byetunes-appintents

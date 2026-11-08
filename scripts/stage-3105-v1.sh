@@ -13,7 +13,6 @@ for path in "$ROOT" "$ROOT/Sources" "$ROOT/Resources/Filza3105.bundle"; do
 done
 
 test -f "$ROOT/Sources/AppState.swift" || { echo "Missing Filza embedded 3105 AppState adapter" >&2; exit 1; }
-test -f "$ROOT/Sources/KernelExploit.swift" || { echo "Missing Filza embedded 3105 KernelExploit adapter" >&2; exit 1; }
 test -f "$ROOT/Sources/FilzaEmbeddedPanel.swift" || { echo "Missing canonical embedded panel" >&2; exit 1; }
 test -f "$ROOT/Sources/FilzaSharedPairingSupport.swift" || { echo "Missing Filza shared pairing support" >&2; exit 1; }
 
@@ -30,7 +29,6 @@ for required in \
   helpers/AppTabNavigationState.swift \
   helpers/ContainerStore.swift \
   helpers/DevicePatchService.swift \
-  helpers/KernelExploit.swift \
   helpers/PatchProjectStore.swift \
   helpers/SupportPolicy.swift \
   helpers/Utils.swift \
@@ -38,9 +36,6 @@ for required in \
   views/PatchProjectsView.swift \
   ContentView.swift \
   views/SettingsView.swift \
-  kexploit/kexploit_opa334.m \
-  kexploit/offsets.m \
-  kexploit/sandbox_escape.m \
   Info.plist; do
   test -f "$UPSTREAM/$required" || { echo "Missing upstream 3105 1.1.1 file: $required" >&2; exit 1; }
 done
@@ -53,7 +48,7 @@ copy_source() {
 }
 
 # Stage the complete source units already supported by the Filza embedding.
-# AppState/KernelExploit remain small Filza adapters because upstream owns them
+# AppState remains a small Filza adapter because upstream owns it
 # from App.swift / its bridging header, while Filza owns UIApplication and the
 # mixed Theos module. Standalone window hooks (onboarding/attribution and the
 # process-wide fork override) are deliberately not installed into Filza.
@@ -91,15 +86,6 @@ copy_source views/PatchProjectsView.swift PatchProjectsView.swift
 copy_source views/WallpaperLabView.swift WallpaperLabView.swift
 copy_source ContentView.swift ThreeOneOSFiveContentView.swift
 copy_source views/SettingsView.swift ThreeOneOSFiveSettingsView.swift
-
-# 1.1.1 updates the kernel backend used for the newly verified iOS 17/18 range.
-# These files are already part of Filza's existing build graph, so stage the
-# pinned upstream revisions in-place without adding a second implementation.
-cp "$UPSTREAM/kexploit/kexploit_opa334.h" kexploit/kexploit_opa334.h
-cp "$UPSTREAM/kexploit/kexploit_opa334.m" kexploit/kexploit_opa334.m
-cp "$UPSTREAM/kexploit/offsets.m" kexploit/offsets.m
-cp "$UPSTREAM/kexploit/sandbox_escape.h" sandbox_escape.h
-cp "$UPSTREAM/kexploit/sandbox_escape.m" sandbox_escape.m
 
 python3 - \
   "$ROOT/Sources/ThreeOneOSFiveContentView.swift" \
@@ -280,11 +266,7 @@ assert_contains 'KernelExploit.requiresSandboxEscape' "$ROOT/Sources/ContainerSt
 assert_contains 'Filza3105PairingSettingsSection()' "$ROOT/Sources/ThreeOneOSFiveSettingsView.swift" 'shared pairing settings'
 assert_contains 'FilzaSharedPairingSupport.resolvedIcon' "$ROOT/Sources/AppDataBrowserView.swift" 'shared SpringBoard icon resolver'
 assert_contains 'filzaSpringBoardIconForBundleIDRSD' "$ROOT/Sources/AppIconHelper.m" 'RSD SpringBoard icon bridge'
-assert_contains 'func runKernelExploitIfNeeded()' "$ROOT/Sources/AppState.swift" 'embedded 1.1.1 AppState adapter'
-assert_contains 'enum KernelExploit' "$ROOT/Sources/KernelExploit.swift" 'embedded 1.1.1 KernelExploit adapter'
 assert_contains 'FilzaEmbeddedPanel' "$ROOT/Sources/FilzaEmbeddedPanel.swift" 'canonical embedded UI panel'
-assert_contains 'kexploit_opa334' kexploit/kexploit_opa334.m '1.1.1 kernel backend'
-assert_contains 'sandbox_escape' sandbox_escape.m '1.1.1 sandbox backend'
 assert_contains '"browser.tabs"' "$ROOT/Resources/Filza3105.bundle/en.lproj/Localizable.strings" 'Files tab localization'
 
 plutil -lint "$ROOT/Resources/Filza3105.bundle/UpstreamAppInfo.plist" >/dev/null || {

@@ -73,3 +73,10 @@ including the support-state integration, shared pairing/icon adapter, canonical
 embedded panel, and exclusion of standalone-global hooks before compilation.
 
 The upstream GPLv3 license and third-party notices remain preserved.
+
+## worse_query-only override
+
+The current build removes the kernel backend, autorun coordinator, and kernel
+status/verified-range UI described historically above. Staging no longer copies
+kernel sources. The final `restrict-worse-query.py` transform routes all container
+access through the shared worse_query facade. See `docs/WORSE_QUERY.md`.

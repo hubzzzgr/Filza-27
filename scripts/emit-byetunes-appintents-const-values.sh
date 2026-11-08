@@ -122,8 +122,6 @@ if ! xcrun --sdk iphoneos swift-frontend \
   -Xcc -fobjc-arc \
   -Xcc -I"$ROOT/compat" \
   -Xcc -I"$ROOT" \
-  -Xcc -I"$ROOT/XPF/src" \
-  -Xcc -I"$ROOT/XPF/external/ChOma/include" \
   -Xcc -I"$ROOT/Vendor/idevice/include" \
   -Xcc -I"$ROOT/ThirdParty/3105/Sources" \
   -Xcc -I"$ROOT/ThirdParty/mond-current/Generated" \

@@ -281,25 +281,6 @@ static NSString *FilzaBadQueryFailureDescription(int64_t result)
     }
 }
 
-static NSString *FilzaRawClass2ContainerPath(NSString *identifier, NSString **error)
-{
-    NSString *detail = nil;
-    MCMLease *lease = [MCMLease leaseForClass:2
-                                   identifier:identifier
-                                        group:NO
-                                         part:0
-                                        flags:kFilzaClass2LookupFlags
-                                        error:&detail];
-    NSString *root = lease.rootPath.copy;
-    [lease invalidate];
-    if (!root.length) {
-        if (error) *error = detail ?: @"class-2 metadata lookup returned no container root";
-        return nil;
-    }
-    if (error) *error = detail;
-    return root;
-}
-
 static BOOL FilzaActivateBadQueryForContainer(NSString *identifier,
                                                NSString *container,
                                                NSString **error)
@@ -368,33 +349,14 @@ NSString *FilzaEnsureVirtualAppDataPath(NSString *identifier, NSString **error)
     }
 
     NSString *activationDetail = nil;
-    NSString *container = MCMFilzaDataContainerPath(identifier, &activationDetail);
+    NSString *container = MCMActivateContainerPath(2, identifier, NO, &activationDetail);
     if (!container.length) {
-        NSString *lookupDetail = nil;
-        NSString *rawContainer = FilzaRawClass2ContainerPath(identifier, &lookupDetail);
-        NSString *discoveryDetail = nil;
-        if (!rawContainer.length)
-            rawContainer = FilzaBadQueryContainerPathForIdentifier(identifier, &discoveryDetail);
-        NSString *fallbackDetail = nil;
-        if (!rawContainer.length ||
-            !FilzaActivateBadQueryForContainer(identifier, rawContainer, &fallbackDetail)) {
-            if (error) {
-                *error = [NSString stringWithFormat:
-                    @"MHA class-2 activation failed: %@; raw lookup: %@; published bad_query_list discovery: %@; bad_query fallback: %@",
-                    activationDetail ?: @"unknown",
-                    lookupDetail ?: @"no detail",
-                    discoveryDetail ?: @"not needed",
-                    fallbackDetail ?: @"not available"];
-            }
-            return nil;
-        }
-        container = rawContainer;
-        activationDetail = [NSString stringWithFormat:
-            @"MHA class-2 activation unavailable; %@", fallbackDetail ?: @"bad_query active"];
+        if (error) *error = activationDetail;
+        return nil;
     }
 
     NSString *directory = [MCMFilzaVirtualRoot()
-        stringByAppendingPathComponent:@"[MHA-C2] App Data"];
+        stringByAppendingPathComponent:@"App Data"];
     NSError *directoryError = nil;
     if (![NSFileManager.defaultManager createDirectoryAtPath:directory
                                   withIntermediateDirectories:YES

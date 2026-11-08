@@ -3,9 +3,59 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
+#import "FilzaAccessStatus.h"
 #include "compat/bad_query.h"
 #import "ThirdParty/worse_query/worse_query.h"
 #import "ThirdParty/worse_query/pathleak.h"
+
+static NSMutableDictionary<NSString *, NSString *> *FilzaAccessObservations(void)
+{
+    static NSMutableDictionary *observations;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{ observations = [NSMutableDictionary new]; });
+    return observations;
+}
+
+NSDictionary<NSString *, NSString *> *FilzaWorseQueryObservedAccess(void)
+{
+    NSMutableDictionary *observations = FilzaAccessObservations();
+    @synchronized (observations) { return observations.copy; }
+}
+
+static void FilzaObserveQuery(NSString *path, int64_t result)
+{
+    NSString *status = nil;
+    if (result < 0) {
+        status = [NSString stringWithFormat:@"Grant failed (%lld)", result];
+    } else {
+        // Observe actual readability; never infer it from an extension handle.
+        DIR *directory = opendir(path.fileSystemRepresentation);
+        BOOL readable = NO;
+        if (directory) {
+            errno = 0;
+            (void)readdir(directory);
+            readable = errno == 0;
+            closedir(directory);
+        } else {
+            int fd = open(path.fileSystemRepresentation, O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK);
+            if (fd >= 0) {
+                char byte;
+                readable = read(fd, &byte, 1) >= 0;
+                close(fd);
+            }
+        }
+        status = readable ? @"Read access observed; writes untested" : @"Handle received; read access not verified";
+    }
+    NSMutableDictionary *observations = FilzaAccessObservations();
+    @synchronized (observations) {
+        if (observations.count >= 64 && !observations[path]) [observations removeObjectForKey:observations.allKeys.firstObject];
+        observations[path] = status;
+    }
+}
 
 static NSString *FilzaQueryPath(const char *path)
 {
@@ -43,6 +93,7 @@ int64_t bad_query(char *path, bool create, char *group_identifier, bool is_group
             BOOL altFlags = is_group || (appGroupTarget &&
                 NSProcessInfo.processInfo.operatingSystemVersion.majorVersion == 26);
             int64_t result = worse_query(target, group, altFlags, create);
+            FilzaObserveQuery(target, result);
             // Preserve legacy diagnostics while keeping new prerequisites distinct.
             switch (result) {
                 case -1: return -256; // group unavailable or extension consumption failed
