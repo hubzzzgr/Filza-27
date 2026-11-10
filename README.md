@@ -3,13 +3,14 @@
 This follow-up packages a dedicated App Group request for SideStore and resolves
 its signed team-suffixed ID automatically. It carries an ad-hoc entitlement request,
 not an Apple-authorized signature/profile; SideStore must provision and re-sign it.
-It also defers plist search attachment until loading finishes and suppresses the
-recurring Not activated notice without modifying activation state. The latest
-plist crash trace is still needed to confirm device behavior.
+It also defers plist search attachment until loading finishes, implements the
+legacy UIKit navigation selectors missing in the reported `hidNavigationBar`
+crash, and suppresses the recurring Not activated notice without modifying
+activation state. End-to-end device search/editing remains unverified.
 
 This branch patches the plist editor's deprecated search-controller NIB and
 adds a UISearchController-backed adapter, removes the custom support popup,
-and removes the music toolbar/shortcut entry. [Download the follow-up sideloadable IPA](https://github.com/hubzzzgr/Filza-27/actions/runs/42746066500/artifacts/13731775630).
+and removes the music toolbar/shortcut entry. [Download the follow-up sideloadable IPA](https://github.com/hubzzzgr/Filza-27/actions/runs/42748910629/artifacts/13733062239).
 See [static verification and search compatibility limits](docs/PLIST_SEARCH_FIX.md).
 No simulator or app launch was used for verification.
 
@@ -29,14 +30,14 @@ The [sideloadable IPA workflow](https://github.com/hubzzzgr/Filza-27/actions/wor
 compiles on macOS with Xcode 26.2 and uploads `Filza-27-sideloadable-arm64`, containing
 the IPA and SHA-256 checksum. Download an artifact from a successful run of the
 **worse_query-only changes**; earlier artifacts contain the older mixed build.
-[Latest sideloadable IPA artifact](https://github.com/hubzzzgr/Filza-27/actions/runs/42746066500/artifacts/13731775630).
-Compilation, packaging, and static archive checks passed for source `3945c2d`
-on branch `fix/plist-lifecycle-default-group` ([build](https://github.com/hubzzzgr/Filza-27/actions/runs/42746066500)).
+[Latest sideloadable IPA artifact](https://github.com/hubzzzgr/Filza-27/actions/runs/42748910629/artifacts/13733062239).
+Compilation, packaging, and static archive checks passed for source `766d555`
+on branch `fix/plist-lifecycle-default-group` ([build](https://github.com/hubzzzgr/Filza-27/actions/runs/42748910629)).
 Artifacts expire after 14 days. This IPA includes an ad-hoc request for the default
 App Group; SideStore must provision and re-sign it. The app automatically resolves
 the accessible signed group, including a team suffix. Select **Use packaged setting**
 to clear a previously saved manual override. No device functionality is confirmed.
-IPA SHA-256: `048e7241a3b0e5c47d37eaa7b2b97d79035d4a9bec5419aa38693c852983d63a`.
+IPA SHA-256: `9cc0dd1325d181c3042279c52d41b554865e35e7e337d6e892075035875304f1`.
 
 CI only compiles, generates metadata, packages, and uploads. It never launches
 Filza, an exploit, or a simulator. A green build does not establish exploit or

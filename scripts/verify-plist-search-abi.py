@@ -8,7 +8,7 @@ from pathlib import Path
 
 b = Path(sys.argv[1]).read_bytes()
 assert b[:4] == bytes.fromhex('cffaedfe'), 'expected little-endian Mach-O 64'
-assert struct.unpack_from('<I', b, 4)[0] == 0x0100000c, 'expected arm64' 
+assert struct.unpack_from('<I', b, 4)[0] == 0x0100000c, 'expected arm64'
 u32=lambda o:struct.unpack_from('<I',b,o)[0]
 u64=lambda o:struct.unpack_from('<Q',b,o)[0]
 segments=[];classlists=[];p=32

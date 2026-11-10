@@ -120,3 +120,16 @@ load or execute the library. It rejects the prior artifact missing the method.
 Private UIKit selectors can vary across OS versions; this addresses the reported
 selector and the inspected neighboring callbacks, not every private legacy API.
 Runtime plist/search parity and exploit compatibility remain unverified.
+
+The selector-fix build [42748910629](https://github.com/hubzzzgr/Filza-27/actions/runs/42748910629) succeeded for source
+`766d5555efb4030150f2ed881d1068d5f3ab697e` on
+`fix/plist-lifecycle-default-group`. [Download the new IPA and checksum](https://github.com/hubzzzgr/Filza-27/actions/runs/42748910629/artifacts/13733062239).
+IPA SHA-256: `9cc0dd1325d181c3042279c52d41b554865e35e7e337d6e892075035875304f1`.
+Final IPA inspection confirmed the adapter's own `hidNavigationBar` method with
+arm64 encoding `B16@0:8` and machine code `mov w0, #0; ret`, plus all four
+navigation/teardown method entries with the expected void signatures. The old
+artifact fails this check. The packaged NIB hash is unchanged from the replacement
+hash above; notice suppression, music-shortcut removal and the default App Group
+ad-hoc request remain present, with no provisioning profile. The specific missing
+selector has been implemented; complete device behavior remains unverified.
+No library/app, simulator or exploit was loaded or executed during verification.

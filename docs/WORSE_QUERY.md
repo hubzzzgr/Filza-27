@@ -198,3 +198,9 @@ Static Mach-O signature inspection confirmed the dedicated group request and
 ad-hoc flag; no Apple provisioning profile is bundled. Device access remains
 unverified. Older build results above describe their historical artifacts, not
 the new default-group package.
+
+The subsequent plist navigation-selector fix preserves this group request and
+backend setup: [build 42748910629](https://github.com/hubzzzgr/Filza-27/actions/runs/42748910629), source `766d555`.
+[Latest IPA](https://github.com/hubzzzgr/Filza-27/actions/runs/42748910629/artifacts/13733062239), SHA-256
+`9cc0dd1325d181c3042279c52d41b554865e35e7e337d6e892075035875304f1`. Static inspection reconfirmed the default entitlement request;
+this UI fix adds no runtime exploit compatibility evidence.
