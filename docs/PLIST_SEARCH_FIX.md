@@ -56,7 +56,7 @@ patched archive for the replacement NIB class and linked adapter, absence of
 the support popup string, and absence of packaged music shortcuts. Runtime
 search/editing behavior must not be inferred from a successful build.
 
-Build result: [GitHub Actions 42741740457](https://github.com/hubzzzgr/Filza-27/actions/runs/42741740457)
+Previous build (reported still crashing): [GitHub Actions 42741740457](https://github.com/hubzzzgr/Filza-27/actions/runs/42741740457)
 succeeded for source `96fee868c4fad643f26541da5056f37b0e204951` on
 `fix/plist-search-ui`. Download the [unsigned IPA and checksum](https://github.com/hubzzzgr/Filza-27/actions/runs/42741740457/artifacts/13729673454).
 IPA SHA-256: `d215ab40f4eb440d486a5836a046eb9fb0197451733eecc6a209b7880b7c03f1`.
@@ -81,3 +81,16 @@ NotActivatedNotice.m suppresses only presentation of alerts containing the liter
 Not activated notice, through TGAlertController and UIKit's alert presentation.
 It does not modify license/activation state or enable any paid functionality.
 Other alerts are passed through. The prior support-popup module stays unlinked.
+
+Follow-up build [42746066500](https://github.com/hubzzzgr/Filza-27/actions/runs/42746066500) succeeded for source
+`3945c2df50bb38cb2e9fd165abc746ffec23e72d` on
+`fix/plist-lifecycle-default-group`. [Download the sideloadable IPA](https://github.com/hubzzzgr/Filza-27/actions/runs/42746066500/artifacts/13731775630).
+IPA SHA-256: `048e7241a3b0e5c47d37eaa7b2b97d79035d4a9bec5419aa38693c852983d63a`.
+Static inspection verified the exact NIB hash, linked deferred adapter and notice
+filter, absent music shortcuts and removed-backend markers, no provisioning
+profile, and an ad-hoc main-executable signature with the default App Group
+request. This request still requires SideStore provisioning/re-signing. No app,
+simulator or exploit was launched. The remaining crash cause is unconfirmed;
+provide the latest exception reason/stack or `Documents/FilzaSlop Logs/LastException.txt`
+and the corresponding `Runtime.log` entries to locate it. Search/editing parity
+remains unverified and the expanded-tree fallback limitation remains.

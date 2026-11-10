@@ -54,9 +54,10 @@ Info.plist string `FilzaWorseQueryAppGroup`:
 ```
 
 CI accepts optional workflow input `app_group`, or repository variable
-`FILZA_WORSE_QUERY_APP_GROUP`, to package the Info.plist string. It does not create
-an App Group or sign/provision the archive. Free-account or entitlement-stripping
-signers may not meet the prerequisite. Upstream removes/recreates that group's
+`FILZA_WORSE_QUERY_APP_GROUP`, to override the dedicated default request in
+Info.plist and the main executable's ad-hoc entitlements. CI does not register
+an App Group or obtain Apple signing/provisioning. SideStore must provision and
+re-sign the request. Entitlement-stripping signers may not meet the prerequisite. Upstream removes/recreates that group's
 `Library/Caches`; do not use a group containing caches/data you need to preserve.
 LiveContainer depends on its host's group entitlement, not the guest plist alone.
 
@@ -91,7 +92,8 @@ the old ABI. All clients serialize the complete upstream Caches transaction.
 The macOS workflow builds the same pinned idevice and SSH dependencies, compiles
 arm64 iPhoneOS, generates AppIntents metadata, and packages the checksum-pinned
 FilzaSlop binary/resources base. The old injected library is replaced completely.
-It copies Mond/3105/ByeTunes resources and strips all Mach-O signatures/profiles.
+It copies Mond/3105/ByeTunes resources and strips existing signatures/profiles,
+then ad-hoc signs the main executable with the dedicated App Group request.
 The base app binary is prebuilt; this repository cannot rebuild proprietary
 Filza internals. No claim of auditing every internal path of that binary is made.
 
@@ -187,3 +189,12 @@ blocked and shows the setup error. There is no entitlement bypass or fallback
 exploit. Existing manual overrides still take precedence; select Use packaged
 setting to restore the automatic default. The group is dedicated and disposable
 because worse_query recreates its Library/Caches during a request.
+
+The default-group follow-up was compiled and packaged successfully in
+[run 42746066500](https://github.com/hubzzzgr/Filza-27/actions/runs/42746066500) for source `3945c2d`.
+[Download the IPA and checksum](https://github.com/hubzzzgr/Filza-27/actions/runs/42746066500/artifacts/13731775630).
+IPA SHA-256: `048e7241a3b0e5c47d37eaa7b2b97d79035d4a9bec5419aa38693c852983d63a`.
+Static Mach-O signature inspection confirmed the dedicated group request and
+ad-hoc flag; no Apple provisioning profile is bundled. Device access remains
+unverified. Older build results above describe their historical artifacts, not
+the new default-group package.

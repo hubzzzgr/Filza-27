@@ -9,7 +9,7 @@ plist crash trace is still needed to confirm device behavior.
 
 This branch patches the plist editor's deprecated search-controller NIB and
 adds a UISearchController-backed adapter, removes the custom support popup,
-and removes the music toolbar/shortcut entry. [Previous plist adapter build (superseded)](https://github.com/hubzzzgr/Filza-27/actions/runs/42741740457/artifacts/13729673454).
+and removes the music toolbar/shortcut entry. [Download the follow-up sideloadable IPA](https://github.com/hubzzzgr/Filza-27/actions/runs/42746066500/artifacts/13731775630).
 See [static verification and search compatibility limits](docs/PLIST_SEARCH_FIX.md).
 No simulator or app launch was used for verification.
 
@@ -29,12 +29,14 @@ The [sideloadable IPA workflow](https://github.com/hubzzzgr/Filza-27/actions/wor
 compiles on macOS with Xcode 26.2 and uploads `Filza-27-sideloadable-arm64`, containing
 the IPA and SHA-256 checksum. Download an artifact from a successful run of the
 **worse_query-only changes**; earlier artifacts contain the older mixed build.
-[Latest worse_query-only IPA artifact](https://github.com/hubzzzgr/Filza-27/actions/runs/42527893233/artifacts/13636511880).
-Compilation, packaging, and static archive checks passed for setup-fix source `f55e03b`
-on branch `fix/worse-query-app-group-setup`.
-Artifacts expire after 14 days. This artifact has no App Group configured; set
-the group in the in-app setup screen (or Info.plist) and sign with a matching
-provisioned group before use. The setting cannot create a missing entitlement.
+[Latest sideloadable IPA artifact](https://github.com/hubzzzgr/Filza-27/actions/runs/42746066500/artifacts/13731775630).
+Compilation, packaging, and static archive checks passed for source `3945c2d`
+on branch `fix/plist-lifecycle-default-group` ([build](https://github.com/hubzzzgr/Filza-27/actions/runs/42746066500)).
+Artifacts expire after 14 days. This IPA includes an ad-hoc request for the default
+App Group; SideStore must provision and re-sign it. The app automatically resolves
+the accessible signed group, including a team suffix. Select **Use packaged setting**
+to clear a previously saved manual override. No device functionality is confirmed.
+IPA SHA-256: `048e7241a3b0e5c47d37eaa7b2b97d79035d4a9bec5419aa38693c852983d63a`.
 
 CI only compiles, generates metadata, packages, and uploads. It never launches
 Filza, an exploit, or a simulator. A green build does not establish exploit or
@@ -44,10 +46,11 @@ device compatibility.
 
 - Packaged app ID: `com.hubzzzgr.FilzaWorseQuery`. The MobileHouseArrest identity
   is not retained. Your signer may change this to an identifier you control.
-- Select an already provisioned group in **worse_query only → App Group setup**,
-  or configure `FilzaWorseQueryAppGroup` in Info.plist. Provision the same group
-  in `com.apple.security.application-groups`. CI accepts an optional `app_group`
-  workflow input or `FILZA_WORSE_QUERY_APP_GROUP` repository variable.
+- Default App Group request: `group.com.hubzzzgr.FilzaWorseQuery`. SideStore must
+  register/assign it and sign a matching profile/entitlement. The app selects its
+  accessible signed default automatically. The in-app setup screen retains an
+  override for other already provisioned groups. CI also accepts an optional
+  `app_group` input or `FILZA_WORSE_QUERY_APP_GROUP` repository variable.
 - Use a dedicated, disposable group: upstream worse_query replaces its
   `Library/Caches` during a request. No group means no cross-container grants.
 - Upstream advertises iOS 26.0–26.7.2 / 27.2. This is not a device-tested Filza
