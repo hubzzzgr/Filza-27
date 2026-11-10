@@ -136,15 +136,24 @@ static char plistSearchKey;
     id<UITableViewDataSource> source = self.searchResultsDataSource ?: (id)self.searchContentsController;
     return [source tableView:[self originalTable] cellForRowAtIndexPath:self.matches[path.row]];
 }
-- (void)tableView:(UITableView *)table didSelectRowAtIndexPath:(NSIndexPath *)path {
+- (void)openMatch:(NSIndexPath *)path accessory:(BOOL)accessory {
+    if (path.row >= (NSInteger)self.matches.count) return;
     NSIndexPath *original = self.matches[path.row];
-    self.modern.active = NO;
-    UITableView *tree = [self originalTable];
-    [tree scrollToRowAtIndexPath:original atScrollPosition:UITableViewScrollPositionMiddle animated:NO];
-    [tree selectRowAtIndexPath:original animated:NO scrollPosition:UITableViewScrollPositionNone];
-    id<UITableViewDelegate> target = self.searchResultsDelegate ?: (id)self.searchContentsController;
-    if ([target respondsToSelector:@selector(tableView:didSelectRowAtIndexPath:)]) [target tableView:tree didSelectRowAtIndexPath:original];
+    void (^open)(void) = ^{
+        self.modern.active = NO;
+        UITableView *tree = [self originalTable];
+        if (!tree || original.section >= tree.numberOfSections || original.row >= [tree numberOfRowsInSection:original.section]) return;
+        [tree scrollToRowAtIndexPath:original atScrollPosition:UITableViewScrollPositionMiddle animated:NO];
+        [tree selectRowAtIndexPath:original animated:NO scrollPosition:UITableViewScrollPositionNone];
+        id target = self.searchResultsDelegate ?: self.searchContentsController;
+        SEL action = accessory ? @selector(tableView:accessoryButtonTappedForRowWithIndexPath:) : @selector(tableView:didSelectRowAtIndexPath:);
+        if ([target respondsToSelector:action]) ((void(*)(id,SEL,id,id))objc_msgSend)(target,action,tree,original);
+    };
+    if (self.modern.presentingViewController) [self.modern dismissViewControllerAnimated:NO completion:open];
+    else open();
 }
+- (void)tableView:(UITableView *)table didSelectRowAtIndexPath:(NSIndexPath *)path { [self openMatch:path accessory:NO]; }
+- (void)tableView:(UITableView *)table accessoryButtonTappedForRowWithIndexPath:(NSIndexPath *)path { [self openMatch:path accessory:YES]; }
 
 @end
 
