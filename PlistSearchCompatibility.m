@@ -119,6 +119,7 @@ static char plistSearchKey;
     UITableView *table = [self originalTable];
     id<UITableViewDataSource> source = self.searchResultsDataSource ?: (id)self.searchContentsController;
     NSMutableArray *paths = [NSMutableArray new];
+    if (!table || !source) { self.matches = @[]; return; }
     NSInteger sections = [source respondsToSelector:@selector(numberOfSectionsInTableView:)] ? [source numberOfSectionsInTableView:table] : 1;
     if (table) for (NSInteger section = 0; section < sections; section++) {
         NSInteger count = [source tableView:table numberOfRowsInSection:section];
