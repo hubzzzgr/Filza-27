@@ -18,6 +18,11 @@
 @property(nonatomic) BOOL notifiedLoad;
 @property(nonatomic) BOOL ready;
 - (void)attach;
+- (BOOL)hidNavigationBar;
+- (void)navigationControllerWillShowViewController:(UIViewController *)controller;
+- (void)navigationControllerDidShowViewController:(UIViewController *)controller;
+- (void)navigationControllerDidCancelShowingViewController:(UIViewController *)controller;
+- (void)_clearViewController;
 @end
 
 static char plistSearchKey;
@@ -60,6 +65,29 @@ static char plistSearchKey;
     _searchResultsDelegate = delegate;
 }
 - (void)awakeFromNib { [super awakeFromNib]; }
+// UIKit still consults the legacy searchDisplayController during navigation.
+// This adapter never hides/restores the bar itself: UISearchController owns
+// search presentation. Reporting the navigation controller's current hidden
+// state here would incorrectly claim that the legacy controller hid it.
+- (BOOL)hidNavigationBar { return NO; }
+- (void)navigationControllerWillShowViewController:(UIViewController *)controller {
+    // End this editor's search before navigating away. Do not create modern
+    // search UI from a UIKit transition callback while the NIB is decoding.
+    if (controller != self.searchContentsController && _modern.isActive)
+        [_modern setActive:NO];
+}
+- (void)navigationControllerDidShowViewController:(UIViewController *)controller {
+    // No legacy navigation-bar bookkeeping to finish.
+}
+- (void)navigationControllerDidCancelShowingViewController:(UIViewController *)controller {
+    // UISearchController handles its own presentation-transition cancellation.
+}
+- (void)_clearViewController {
+    // UIViewController can send this during teardown of its legacy outlet.
+    // Keep teardown passive and let the weak datasource/delegate outlets clear.
+    _searchContentsController = nil;
+    _ready = NO;
+}
 - (void)attach {
     if (!self.ready) return;
     [self ensureModern];

@@ -94,3 +94,29 @@ simulator or exploit was launched. The remaining crash cause is unconfirmed;
 provide the latest exception reason/stack or `Documents/FilzaSlop Logs/LastException.txt`
 and the corresponding `Runtime.log` entries to locate it. Search/editing parity
 remains unverified and the expanded-tree fallback limitation remains.
+
+## Reported UIKit navigation selector crash
+
+The reproduced exception identifies `-[FZPlistSearchControllerXX hidNavigationBar]`
+as the missing selector. The original adapter metadata confirms it is absent.
+This is a concrete adapter ABI gap; it is separate from the earlier suspected
+NIB timing problem. It is not evidence about worse_query access or provisioning.
+
+The adapter now explicitly implements `hidNavigationBar` with Boolean return
+`NO`: it has never hidden a bar through the legacy controller, and modern search
+owns its presentation. It also implements the reference legacy navigation
+will-show/did-show/cancel callbacks and passive `_clearViewController` teardown.
+Leaving the editor ends active modern search without creating UI during a
+transition. No global unrecognized-selector swallowing/forwarding is added.
+The NIB replacement, original editor implementation, search filtering callbacks,
+expanded-tree fallback and App Group request are preserved.
+
+Reference selector signatures were checked against the
+[UIKitCore runtime header](https://github.com/nst/iOS-Runtime-Headers/blob/master/PrivateFrameworks/UIKitCore.framework/UISearchDisplayController.h).
+CI statically reads the adapter's Objective-C method metadata and exact arm64
+type encodings with `scripts/verify-plist-search-abi.py`, including Boolean
+`hidNavigationBar` and void navigation/teardown methods. This checker does not
+load or execute the library. It rejects the prior artifact missing the method.
+Private UIKit selectors can vary across OS versions; this addresses the reported
+selector and the inspected neighboring callbacks, not every private legacy API.
+Runtime plist/search parity and exploit compatibility remain unverified.

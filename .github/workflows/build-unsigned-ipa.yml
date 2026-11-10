@@ -110,6 +110,7 @@ jobs:
           test "$(lipo -archs .theos/obj/FilzaApplySandboxExt.dylib)" = arm64
           nm -gU .theos/obj/FilzaApplySandboxExt.dylib > Build/symbols.txt
           grep -Fq 'OBJC_CLASS_$_FZPlistSearchControllerXX' Build/symbols.txt
+          python3 scripts/verify-plist-search-abi.py .theos/obj/FilzaApplySandboxExt.dylib
           if grep -aFq 'Support Filza 27' .theos/obj/FilzaApplySandboxExt.dylib; then
             echo "Removed support popup still linked" >&2; exit 1
           fi
