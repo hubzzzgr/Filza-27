@@ -1,5 +1,11 @@
 # Filza-27 — worse_query only
 
+This branch patches the plist editor's deprecated search-controller NIB and
+adds a UISearchController-backed adapter, removes the custom support popup,
+and removes the music toolbar/shortcut entry. [Download the patched unsigned IPA](https://github.com/hubzzzgr/Filza-27/actions/runs/42741740457/artifacts/13729673454).
+See [static verification and search compatibility limits](docs/PLIST_SEARCH_FIX.md).
+No simulator or app launch was used for verification.
+
 A sideloadable Filza build with **worse_query as its only filesystem-access
 backend**. A dedicated App Group, matching provisioning profile, and signing
 entitlement are required. An unsigned IPA cannot supply that authorization.

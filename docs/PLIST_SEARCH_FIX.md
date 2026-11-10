@@ -55,3 +55,13 @@ No simulator, device/app launch or runtime exploit test is used. Inspect the
 patched archive for the replacement NIB class and linked adapter, absence of
 the support popup string, and absence of packaged music shortcuts. Runtime
 search/editing behavior must not be inferred from a successful build.
+
+Build result: [GitHub Actions 42741740457](https://github.com/hubzzzgr/Filza-27/actions/runs/42741740457)
+succeeded for source `96fee868c4fad643f26541da5056f37b0e204951` on
+`fix/plist-search-ui`. Download the [unsigned IPA and checksum](https://github.com/hubzzzgr/Filza-27/actions/runs/42741740457/artifacts/13729673454).
+IPA SHA-256: `d215ab40f4eb440d486a5836a046eb9fb0197451733eecc6a209b7880b7c03f1`.
+Final archive inspection confirmed the exact patched NIB hash above, linked
+adapter and modern search controller, no deprecated controller class in packaged
+interfaces, absent support-popup string, and no packaged music shortcut. No app,
+simulator or runtime exploit was launched. Runtime editing/search parity remains
+unverified; the expanded-tree fallback limitation described above applies.
