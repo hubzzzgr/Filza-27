@@ -93,6 +93,12 @@ jobs:
           bash scripts/stage-mond-22-overlay.sh
           bash scripts/stage-3105-v1.sh
 
+      - name: Statically check plist search adapter
+        run: |
+          xcrun --sdk iphoneos clang -fsyntax-only -fobjc-arc -fmodules -fblocks \
+            -target arm64-apple-ios17.0 -isysroot "$(xcrun --sdk iphoneos --show-sdk-path)" \
+            -Werror -Wno-unused-parameter -Wno-deprecated-declarations PlistSearchCompatibility.m
+
       - name: Compile arm64 iPhoneOS library
         run: |
           set -euo pipefail

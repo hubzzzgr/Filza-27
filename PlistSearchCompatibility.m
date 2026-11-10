@@ -53,7 +53,7 @@ static char plistSearchKey;
     _searchResultsDelegate = delegate;
     self.searchResultsTableView.delegate = delegate;
 }
-- (void)awakeFromNib { [self attach]; }
+- (void)awakeFromNib { [super awakeFromNib]; [self attach]; }
 - (void)attach {
     [self ensureModern];
     UIViewController *owner = self.searchContentsController;
@@ -145,7 +145,7 @@ static char plistSearchKey;
         if (!tree || original.section >= tree.numberOfSections || original.row >= [tree numberOfRowsInSection:original.section]) return;
         [tree scrollToRowAtIndexPath:original atScrollPosition:UITableViewScrollPositionMiddle animated:NO];
         [tree selectRowAtIndexPath:original animated:NO scrollPosition:UITableViewScrollPositionNone];
-        id target = self.searchResultsDelegate ?: self.searchContentsController;
+        id target = self.searchResultsDelegate ?: (id)self.searchContentsController;
         SEL action = accessory ? @selector(tableView:accessoryButtonTappedForRowWithIndexPath:) : @selector(tableView:didSelectRowAtIndexPath:);
         if ([target respondsToSelector:action]) ((void(*)(id,SEL,id,id))objc_msgSend)(target,action,tree,original);
     };
