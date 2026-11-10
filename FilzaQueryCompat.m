@@ -6,6 +6,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <dlfcn.h>
 #include <unistd.h>
 #import "FilzaAccessStatus.h"
 #include "compat/bad_query.h"
@@ -28,12 +29,47 @@ NSDictionary<NSString *, NSString *> *FilzaWorseQueryObservedAccess(void)
 
 static NSString *const FilzaGroupOverrideKey = @"FilzaWorseQueryAppGroupOverride";
 
+static NSArray<NSString *> *FilzaSignedAppGroups(void)
+{
+    static NSArray *groups;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        groups = @[];
+        // Read this process's actual signed entitlements. Do not trust a bundled
+        // plist as evidence of provisioning, and never choose an unrelated group.
+        typedef CFTypeRef (*CreateTask)(CFAllocatorRef);
+        typedef CFTypeRef (*CopyEntitlement)(CFTypeRef, CFStringRef, CFErrorRef *);
+        CreateTask create = (CreateTask)dlsym(RTLD_DEFAULT, "SecTaskCreateFromSelf");
+        CopyEntitlement copy = (CopyEntitlement)dlsym(RTLD_DEFAULT, "SecTaskCopyValueForEntitlement");
+        if (!create || !copy) return;
+        CFTypeRef task = create(kCFAllocatorDefault);
+        if (!task) return;
+        id value = CFBridgingRelease(copy(task, CFSTR("com.apple.security.application-groups"), NULL));
+        CFRelease(task);
+        if ([value isKindOfClass:NSArray.class]) {
+            NSMutableArray *valid = [NSMutableArray new];
+            for (id group in value) if ([group isKindOfClass:NSString.class]) [valid addObject:group];
+            groups = valid.copy;
+        }
+    });
+    return groups;
+}
+
 NSString *FilzaWorseQueryGroupIdentifier(void)
 {
-    id group = [NSUserDefaults.standardUserDefaults stringForKey:FilzaGroupOverrideKey];
-    if (![group isKindOfClass:NSString.class] || ![group length])
-        group = [NSBundle.mainBundle objectForInfoDictionaryKey:@"FilzaWorseQueryAppGroup"];
-    return [group isKindOfClass:NSString.class] ? [group stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet] : @"";
+    NSString *override = [NSUserDefaults.standardUserDefaults stringForKey:FilzaGroupOverrideKey];
+    if (override.length) return [override stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+    id bundled = [NSBundle.mainBundle objectForInfoDictionaryKey:@"FilzaWorseQueryAppGroup"];
+    NSString *base = [bundled isKindOfClass:NSString.class] && [bundled length] ? bundled : @"group.com.hubzzzgr.FilzaWorseQuery";
+    base = [base stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+    NSMutableArray *matches = [NSMutableArray new];
+    for (NSString *group in FilzaSignedAppGroups()) {
+        if (([group isEqualToString:base] || [group hasPrefix:[base stringByAppendingString:@"."]]) &&
+            [NSFileManager.defaultManager containerURLForSecurityApplicationGroupIdentifier:group]) [matches addObject:group];
+    }
+    // SideStore appends the signing team ID. Only select an unambiguous,
+    // accessible entitlement belonging to this dedicated configured group.
+    return matches.count == 1 ? matches.firstObject : base;
 }
 
 static BOOL FilzaGroupAccessible(NSString *group)

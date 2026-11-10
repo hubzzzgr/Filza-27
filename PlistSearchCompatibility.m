@@ -1,10 +1,11 @@
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
 #import <objc/message.h>
+#import "FilzaDiagnostics.h"
 
 // The equally sized class name replaces ONLY TGPlistViewController.nib's
 // deprecated class record. Never initialize or subclass UISearchDisplayController.
-@interface FZPlistSearchControllerXX : NSObject <UISearchResultsUpdating, UISearchControllerDelegate, UITableViewDataSource, UITableViewDelegate>
+@interface FZPlistSearchControllerXX : NSObject <NSCoding, UISearchResultsUpdating, UISearchControllerDelegate, UITableViewDataSource, UITableViewDelegate>
 @property(nonatomic, weak) UIViewController *searchContentsController;
 @property(nonatomic, weak) id delegate;
 @property(nonatomic, weak) id<UITableViewDataSource> searchResultsDataSource;
@@ -15,12 +16,20 @@
 @property(nonatomic, copy) NSString *searchResultsTitle;
 @property(nonatomic, copy) NSArray<NSIndexPath *> *matches;
 @property(nonatomic) BOOL notifiedLoad;
+@property(nonatomic) BOOL ready;
 - (void)attach;
 @end
 
 static char plistSearchKey;
 @implementation FZPlistSearchControllerXX
-- (instancetype)initWithCoder:(NSCoder *)coder { return [self init]; }
+- (instancetype)initWithCoder:(NSCoder *)coder {
+    self = [super init];
+    if (self) FilzaDiagnosticsAppend(@"PlistSearch", @"decoded passive search adapter");
+    return self;
+}
+- (void)encodeWithCoder:(NSCoder *)coder {
+    [coder encodeConditionalObject:self.searchContentsController forKey:@"FZOwner"];
+}
 - (instancetype)initWithSearchBar:(UISearchBar *)bar contentsController:(UIViewController *)owner {
     self = [super init];
     if (self) { self.searchContentsController = owner; }
@@ -43,19 +52,18 @@ static char plistSearchKey;
 }
 - (void)setSearchContentsController:(UIViewController *)owner {
     _searchContentsController = owner;
-    if (owner.isViewLoaded) [self attach];
 }
 - (void)setSearchResultsDataSource:(id<UITableViewDataSource>)source {
     _searchResultsDataSource = source;
-    self.searchResultsTableView.dataSource = source;
 }
 - (void)setSearchResultsDelegate:(id<UITableViewDelegate>)delegate {
     _searchResultsDelegate = delegate;
-    self.searchResultsTableView.delegate = delegate;
 }
-- (void)awakeFromNib { [super awakeFromNib]; [self attach]; }
+- (void)awakeFromNib { [super awakeFromNib]; }
 - (void)attach {
+    if (!self.ready) return;
     [self ensureModern];
+    FilzaDiagnosticsAppend(@"PlistSearch", @"attaching modern search after editor load");
     UIViewController *owner = self.searchContentsController;
     if (!owner || !owner.isViewLoaded) return;
     if (!self.delegate) self.delegate = owner;
@@ -67,7 +75,7 @@ static char plistSearchKey;
         [self notifyTable:@"searchDisplayController:didLoadSearchResultsTableView:"];
     }
     owner.definesPresentationContext = YES;
-    owner.navigationItem.searchController = self.modern;
+    if (owner.navigationItem.searchController != self.modern) owner.navigationItem.searchController = self.modern;
     owner.navigationItem.hidesSearchBarWhenScrolling = NO;
 }
 - (void)notify:(NSString *)name {
@@ -97,6 +105,7 @@ static char plistSearchKey;
     [self notifyTable:@"searchDisplayController:didHideSearchResultsTableView:"];
 }
 - (void)updateSearchResultsForSearchController:(UISearchController *)controller {
+    if (!self.ready) return;
     SEL filter = NSSelectorFromString(@"searchDisplayController:shouldReloadTableForSearchString:");
     BOOL reload = YES;
     if ([self.delegate respondsToSelector:filter])
@@ -174,17 +183,36 @@ static void PlistSearchSet(id owner, SEL cmd, id bridge) {
 }
 static IMP plistOriginalLoad;
 static void PlistSearchLoad(id owner, SEL cmd) {
+    FZPlistSearchControllerXX *bridge = PlistSearchGet(owner, NULL);
+    bridge.ready = NO;
+    FilzaDiagnosticsAppend(@"PlistSearch", @"entering original plist viewDidLoad");
     ((void(*)(id,SEL))plistOriginalLoad)(owner,cmd);
-    [PlistSearchGet(owner, NULL) attach];
+    FilzaDiagnosticsAppend(@"PlistSearch", @"original plist viewDidLoad returned");
+    __weak UIViewController *weakOwner = owner;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIViewController *controller = weakOwner;
+        if (!controller) return;
+        FZPlistSearchControllerXX *adapter = objc_getAssociatedObject(controller, &plistSearchKey);
+        adapter.ready = YES;
+        [adapter attach];
+    });
 }
-__attribute__((constructor)) static void InstallPlistSearchCompatibility(void) {
+static void InstallPlistHooks(void) {
+    static BOOL installed = NO;
+    if (installed) return;
     Class cls = NSClassFromString(@"TGPlistViewController");
     if (!cls) return;
+    Method load = class_getInstanceMethod(cls, @selector(viewDidLoad));
+    if (!load) return;
+    plistOriginalLoad = method_getImplementation(load);
+    if (plistOriginalLoad == (IMP)PlistSearchLoad) return;
     class_replaceMethod(cls, NSSelectorFromString(@"searchDisplayController"), (IMP)PlistSearchGet, "@@:");
     class_replaceMethod(cls, NSSelectorFromString(@"setSearchDisplayController:"), (IMP)PlistSearchSet, "v@:@");
-    Method load = class_getInstanceMethod(cls, @selector(viewDidLoad));
-    if (load) {
-        plistOriginalLoad = method_getImplementation(load);
-        class_replaceMethod(cls,@selector(viewDidLoad),(IMP)PlistSearchLoad,method_getTypeEncoding(load));
-    }
+    class_replaceMethod(cls,@selector(viewDidLoad),(IMP)PlistSearchLoad,method_getTypeEncoding(load));
+    installed = YES;
+}
+__attribute__((constructor)) static void InstallPlistSearchCompatibility(void) {
+    InstallPlistHooks();
+    dispatch_async(dispatch_get_main_queue(), ^{ InstallPlistHooks(); });
+    [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidFinishLaunchingNotification object:nil queue:NSOperationQueue.mainQueue usingBlock:^(__unused NSNotification *note) { InstallPlistHooks(); }];
 }

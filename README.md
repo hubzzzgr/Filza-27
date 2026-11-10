@@ -1,8 +1,15 @@
 # Filza-27 — worse_query only
 
+This follow-up packages a dedicated App Group request for SideStore and resolves
+its signed team-suffixed ID automatically. It carries an ad-hoc entitlement request,
+not an Apple-authorized signature/profile; SideStore must provision and re-sign it.
+It also defers plist search attachment until loading finishes and suppresses the
+recurring Not activated notice without modifying activation state. The latest
+plist crash trace is still needed to confirm device behavior.
+
 This branch patches the plist editor's deprecated search-controller NIB and
 adds a UISearchController-backed adapter, removes the custom support popup,
-and removes the music toolbar/shortcut entry. [Download the patched unsigned IPA](https://github.com/hubzzzgr/Filza-27/actions/runs/42741740457/artifacts/13729673454).
+and removes the music toolbar/shortcut entry. [Previous plist adapter build (superseded)](https://github.com/hubzzzgr/Filza-27/actions/runs/42741740457/artifacts/13729673454).
 See [static verification and search compatibility limits](docs/PLIST_SEARCH_FIX.md).
 No simulator or app launch was used for verification.
 
@@ -18,8 +25,8 @@ they execute worse_query/pathleak, not the removed implementations.
 
 ## Build and download
 
-The [unsigned IPA workflow](https://github.com/hubzzzgr/Filza-27/actions/workflows/build-unsigned-ipa.yml)
-compiles on macOS with Xcode 26.2 and uploads `Filza-27-unsigned-arm64`, containing
+The [sideloadable IPA workflow](https://github.com/hubzzzgr/Filza-27/actions/workflows/build-unsigned-ipa.yml)
+compiles on macOS with Xcode 26.2 and uploads `Filza-27-sideloadable-arm64`, containing
 the IPA and SHA-256 checksum. Download an artifact from a successful run of the
 **worse_query-only changes**; earlier artifacts contain the older mixed build.
 [Latest worse_query-only IPA artifact](https://github.com/hubzzzgr/Filza-27/actions/runs/42527893233/artifacts/13636511880).

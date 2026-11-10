@@ -80,16 +80,16 @@ with open(p,'wb') as f: plistlib.dump(info,f)
 PYINFO
 plutil -remove CFBundleURLTypes "$APP/Info.plist" 2>/dev/null || true
 
-# This declares the adapter's group choice only. The sideloading signer must
-# separately provision the matching App Group entitlement; CI does not sign.
-if [[ -n "${FILZA_WORSE_QUERY_APP_GROUP:-}" ]]; then
-  [[ "$FILZA_WORSE_QUERY_APP_GROUP" == group.?* ]] || {
-    echo "FILZA_WORSE_QUERY_APP_GROUP must start with group." >&2; exit 65;
-  }
-  plutil -replace FilzaWorseQueryAppGroup -string "$FILZA_WORSE_QUERY_APP_GROUP" "$APP/Info.plist"
-else
-  plutil -remove FilzaWorseQueryAppGroup "$APP/Info.plist" 2>/dev/null || true
-fi
+# A dedicated group request lets SideStore register/assign it while re-signing.
+# This is an ad-hoc request, not Apple provisioning or installation authority.
+GROUP_ID="${FILZA_WORSE_QUERY_APP_GROUP:-group.com.hubzzzgr.FilzaWorseQuery}"
+[[ "$GROUP_ID" == group.?* ]] || { echo "Invalid group identifier" >&2; exit 65; }
+plutil -replace FilzaWorseQueryAppGroup -string "$GROUP_ID" "$APP/Info.plist"
+python3 - "$APP/FilzaWorseQuery.entitlements" "$GROUP_ID" <<'PYGROUP'
+import plistlib, sys
+with open(sys.argv[1], 'wb') as f:
+    plistlib.dump({'com.apple.security.application-groups': [sys.argv[2]]}, f)
+PYGROUP
 rm -f "$APP/MCMIdentifiers.plist"
 if [[ -n "$CATALOG" ]]; then cp "$CATALOG" "$APP/MCMIdentifiers.plist"; fi
 
@@ -106,6 +106,16 @@ while IFS= read -r -d '' binary; do
 done < <(find "$APP" -type f -print0)
 find "$APP" -type d -name _CodeSignature -prune -exec rm -rf {} +
 find "$APP" -name embedded.mobileprovision -type f -delete
+# Preserve a readable App Group entitlement request on the main executable.
+# SideStore reads this and must replace the ad-hoc signature with real signing.
+codesign --force --sign - --identifier com.hubzzzgr.FilzaWorseQuery \
+  --entitlements "$APP/FilzaWorseQuery.entitlements" --generate-entitlement-der "$APP/$EXECUTABLE"
+codesign -d --entitlements :- "$APP/$EXECUTABLE" > "$STAGE/requested-entitlements.plist" 2>/dev/null
+python3 - "$STAGE/requested-entitlements.plist" "$GROUP_ID" <<'PYCHECK'
+import plistlib,sys
+with open(sys.argv[1], 'rb') as f: info=plistlib.load(f)
+assert info['com.apple.security.application-groups']==[sys.argv[2]]
+PYCHECK
 plutil -lint "$APP/Info.plist"
 test "$(plutil -extract MinimumOSVersion raw -o - "$APP/Info.plist")" = 17.0
 mkdir -p "$(dirname "$OUTPUT_IPA")"

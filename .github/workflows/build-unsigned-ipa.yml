@@ -1,4 +1,4 @@
-name: Build unsigned Filza IPA
+name: Build sideloadable Filza IPA
 
 on:
   push:
@@ -97,7 +97,7 @@ jobs:
         run: |
           xcrun --sdk iphoneos clang -fsyntax-only -fobjc-arc -fmodules -fblocks \
             -target arm64-apple-ios17.0 -isysroot "$(xcrun --sdk iphoneos --show-sdk-path)" \
-            -Werror -Wno-unused-parameter -Wno-deprecated-declarations PlistSearchCompatibility.m
+            -Werror -Wno-unused-parameter -Wno-deprecated-declarations PlistSearchCompatibility.m NotActivatedNotice.m FilzaQueryCompat.m
 
       - name: Compile arm64 iPhoneOS library
         run: |
@@ -123,20 +123,20 @@ jobs:
       - name: Generate AppIntents metadata
         run: bash scripts/generate-appintents-metadata.sh .theos/byetunes-appintents
 
-      - name: Package unsigned sideloading archive
+      - name: Package sideloading archive with App Group request
         run: |
           set -euo pipefail
           curl -fL --retry 3 --retry-delay 2 "$BASE_IPA_URL" -o Build/base.ipa
           echo "$BASE_IPA_SHA256  Build/base.ipa" | shasum -a 256 -c -
-          bash scripts/package-unsigned-ipa.sh Build/base.ipa Build/Filza-27-unsigned.ipa
-          shasum -a 256 Build/Filza-27-unsigned.ipa > Build/SHA256SUMS
+          bash scripts/package-unsigned-ipa.sh Build/base.ipa Build/Filza-27-sideloadable.ipa
+          shasum -a 256 Build/Filza-27-sideloadable.ipa > Build/SHA256SUMS
 
-      - name: Upload unsigned IPA
+      - name: Upload sideloadable IPA
         uses: actions/upload-artifact@v4
         with:
-          name: Filza-27-unsigned-arm64
+          name: Filza-27-sideloadable-arm64
           path: |
-            Build/Filza-27-unsigned.ipa
+            Build/Filza-27-sideloadable.ipa
             Build/SHA256SUMS
           if-no-files-found: error
           retention-days: 14

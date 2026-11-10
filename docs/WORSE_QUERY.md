@@ -168,3 +168,22 @@ bundle identity, and absence of known removed-backend markers. No runtime
 exploit or device feature test was performed; provisioning remains a device-side
 prerequisite. Existing Tweak/activation/file-operation hooks were not modified
 by this focused fix.
+
+## Bundled default group request
+
+The new package requests `group.com.hubzzzgr.FilzaWorseQuery` by default. Its main
+executable has an **ad-hoc signature containing only the App Group request**, so
+SideStore can detect the request and register/assign the group when it provisions
+and re-signs the app. It is not Apple-signed or pre-provisioned, and cannot be
+installed/run directly as an authorized app. CI has no Apple account credentials.
+This package is named sideloadable, not fully unsigned. Other signatures/profiles
+are stripped before the request is applied; SideStore signs them for installation.
+
+At runtime the default resolver reads this process's signed App Group entitlement
+through SecTask, and selects a single accessible exact/default-plus-suffix match.
+This handles SideStore's `.TEAMID` suffix without choosing unrelated groups. If
+entitlement inspection is unavailable or provisioning failed, the app stays
+blocked and shows the setup error. There is no entitlement bypass or fallback
+exploit. Existing manual overrides still take precedence; select Use packaged
+setting to restore the automatic default. The group is dedicated and disposable
+because worse_query recreates its Library/Caches during a request.

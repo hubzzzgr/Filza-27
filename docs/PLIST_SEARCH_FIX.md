@@ -65,3 +65,19 @@ adapter and modern search controller, no deprecated controller class in packaged
 interfaces, absent support-popup string, and no packaged music shortcut. No app,
 simulator or runtime exploit was launched. Runtime editing/search parity remains
 unverified; the expanded-tree fallback limitation described above applies.
+
+## Follow-up after the device crash report
+
+The first adapter build was not sufficient on the reporting device. The follow-up
+makes all NIB outlet setters and awakeFromNib passive, adds NSCoding conformance,
+and defers attachment to the next main-queue turn after the original viewDidLoad
+returns. Search-result callbacks are gated until then. Hook installation is
+idempotent and retried after class registration/launch. Runtime.log now records
+adapter decode, entry/return of original viewDidLoad and deferred attachment.
+The new exception reason/stack is still required to confirm the remaining crash
+cause; compilation and packaging alone cannot establish a device fix.
+
+NotActivatedNotice.m suppresses only presentation of alerts containing the literal
+Not activated notice, through TGAlertController and UIKit's alert presentation.
+It does not modify license/activation state or enable any paid functionality.
+Other alerts are passed through. The prior support-popup module stays unlinked.
