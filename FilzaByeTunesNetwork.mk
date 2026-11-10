@@ -3,7 +3,6 @@
 # embedding, pairing, 3105, Mond, and support integration remain below.
 
 # Replace Filza's legacy activation/payment presentation with voluntary support UI.
-FilzaApplySandboxExt_FILES += FilzaSupportPrompt.m
 
 before-FilzaApplySandboxExt-all::
 	# Add Apps Manager IPA repackaging/export integration.
@@ -62,11 +61,6 @@ before-FilzaApplySandboxExt-all::
 	@grep -Fq 'Color("AccentColor")' ThirdParty/mond-current/Upstream/views/tweaks/mobilegestalt/GestaltView.swift
 	@grep -Fq 'Bundle.main.infoDictionary' ThirdParty/mond-current/Upstream/views/app/SettingsView.swift
 
-	@test -f FilzaSupportPrompt.m || (echo "Missing Filza Buy Me a Coffee support replacement" >&2; exit 1)
-	@grep -Fq 'https://buymeacoffee.com/zyn3' FilzaSupportPrompt.m
-	@grep -Fq 'Support Zyn' FilzaSupportPrompt.m
-	@grep -Fq 'Buy me a coffee' FilzaSupportPrompt.m
-	@grep -Fq 'Activate Filza' FilzaSupportPrompt.m
 
 	# ByeTunes 2.5 owns its current provider/download stack. Do not stage or patch
 	# the retired pre-v2.4 YouTubeKit implementation. Keep only the independent

@@ -123,7 +123,7 @@ static void FMTEnsureUtilityItems(id mainView)
 
     NSMutableArray<UIBarButtonItem *> *items = [NSMutableArray array];
     for (UIBarButtonItem *item in toolbar.items ?: @[])
-        if (!FMTIsUtilityItem(item)) [items addObject:item];
+        if (!FMTIsUtilityItem(item) && !FMTItemMatches(item, @"openMusicLib", @"music")) [items addObject:item];
 
     NSInteger appsIndex = NSNotFound;
     NSInteger musicIndex = NSNotFound;

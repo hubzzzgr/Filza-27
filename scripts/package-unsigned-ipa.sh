@@ -37,6 +37,7 @@ while IFS= read -r -d '' extension_plist; do
   plutil -replace CFBundleIdentifier -string \
     "com.hubzzzgr.FilzaWorseQuery.$(basename "$(dirname "$extension_plist")" .appex)" "$extension_plist"
 done < <(find "$APP/PlugIns" -name Info.plist -print0)
+python3 scripts/patch-plist-search.py "$APP"
 EXECUTABLE="$(plutil -extract CFBundleExecutable raw -o - "$APP/Info.plist")"
 test -s "$APP/$EXECUTABLE"
 # The pinned base is already linked to this injected library. Never run it.
@@ -70,6 +71,13 @@ plutil -replace NSLocalNetworkUsageDescription -string \
   "Filza 27 uses your local network when you enable its WebDAV or SSH/SFTP server." "$APP/Info.plist"
 plutil -replace NSBonjourServices -json '["_http._tcp","_ssh._tcp"]' "$APP/Info.plist"
 bash scripts/merge-3105-app-metadata.sh "$APP/Info.plist"
+python3 - "$APP/Info.plist" <<'PYINFO'
+import plistlib, sys
+p=sys.argv[1]
+with open(p,'rb') as f: info=plistlib.load(f)
+info['UIApplicationShortcutItems']=[x for x in info.get('UIApplicationShortcutItems',[]) if 'music' not in str(x.get('UIApplicationShortcutItemType','')).lower()]
+with open(p,'wb') as f: plistlib.dump(info,f)
+PYINFO
 plutil -remove CFBundleURLTypes "$APP/Info.plist" 2>/dev/null || true
 
 # This declares the adapter's group choice only. The sideloading signer must

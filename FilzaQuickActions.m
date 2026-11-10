@@ -121,11 +121,7 @@ static void FQOpenWithRetry(NSString *type, NSUInteger attempts)
         if (opened)
             FilzaDiagnosticsAppend(@"QuickAction", @"opened complete 3105 Apps Manager");
     }
-    else if ([type isEqualToString:FQMusicType]) {
-        opened = FilzaByeTunesPresentFromController(FQActiveController());
-        if (opened)
-            FilzaDiagnosticsAppend(@"QuickAction", @"opened complete ByeTunes directly");
-    }
+    else if ([type isEqualToString:FQMusicType]) { return; }
     else if ([type isEqualToString:FQGestaltType]) {
         UIViewController *source = FQActiveController();
         if (source) {
